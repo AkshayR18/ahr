@@ -1,0 +1,293 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config xmlns="http://web-harvest.sourceforge.net/schema/1.0/config" scriptlang="groovy">
+
+<var-def name="holidays">
+		<datastore name="holiday_list">
+			select * from @this
+		</datastore>
+	</var-def>
+
+	<script><![CDATA[
+		 list = []
+	]]></script>
+
+	<loop item="holi">
+		<list>
+			<script return="holidays" />
+		</list>
+		<body>			
+			<script><![CDATA[ 
+			println "first - ${holi.get(1)}"			
+			data = "${holi.get(1)}"			
+			list.add(data)
+			]]></script>
+			</body>
+	</loop>
+
+	<script><![CDATA[ 
+	println "Holiday List size - "+list.size()
+	
+	]]></script>
+		<script><![CDATA[
+	import java.io.FileOutputStream;
+	import java.io.FileReader;
+	import java.io.IOException;
+
+	import org.apache.commons.lang.math.NumberUtils;
+	import org.apache.log4j.Logger;
+	import org.apache.poi.ss.usermodel.Row;
+	import org.apache.poi.ss.usermodel.Workbook;
+	import org.apache.poi.xssf.streaming.SXSSFSheet;
+	import org.apache.poi.xssf.streaming.SXSSFWorkbook;
+	import java.time.OffsetDateTime;
+	import java.time.ZoneOffset;
+	
+	import java.time.LocalDate;
+	import java.time.DayOfWeek;
+	import java.time.format.DateTimeFormatter;
+	import java.time.temporal.ChronoField;
+	import java.time.temporal.ChronoUnit;
+	
+	import org.apache.poi.hssf.usermodel.HSSFSheet;
+    import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+    import org.apache.poi.hssf.usermodel.HSSFChart.HSSFSeries;
+    import org.apache.poi.ss.SpreadsheetVersion;
+    import org.apache.poi.ss.usermodel.Cell;
+    import org.apache.poi.ss.usermodel.CellCopyPolicy;
+
+    import org.apache.poi.ss.usermodel.Sheet;
+
+    import org.apache.poi.ss.util.AreaReference;
+    import org.apache.poi.ss.util.CellRangeAddress;
+    import org.apache.poi.xssf.usermodel.XSSFSheet;
+    import org.apache.poi.xssf.usermodel.XSSFTable;
+    import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+    
+
+	
+    import com.google.gson.Gson;
+                
+                previous_working =""
+	            LocalDate previous_working_day
+	           
+	             int holiday_month
+		         int holiday_date
+		         int holiday_year
+                LocalDate date =  LocalDate.now();
+		  
+		  DayOfWeek dayOfWeek = DayOfWeek.of(date.get(ChronoField.DAY_OF_WEEK));
+		  println "dayOfWeek : "+dayOfWeek.name() 
+		  println("previous_working_day- "+get_previous_working_day(date));
+		  previous_working_day = get_previous_working_day(date)
+		  println "previous_working_day == "+previous_working_day
+		  
+		  println("second_previous_working_day- "+get_second_previous_working_day(date));
+		  second_previous_working_day = get_second_previous_working_day(date)
+		  println "second_previous_working_day == "+second_previous_working_day
+		  // for holidays
+		  String localDate  = DateTimeFormatter.ofPattern("dd-MMM-yyyy").format(date);
+		     String[] a = localDate.split("-");
+		     System.out.println(a[0]);
+		     System.out.println(a[1]);
+		     
+		     holiday_year = Integer.parseInt(a[2])
+		          
+		     List<LocalDate> holidays = new ArrayList();
+		     
+		    // holidays.add(LocalDate.of(2019, 7, 24));
+		     		     
+    		  for (Object actual_list : list) {
+					println "actual_list -- "+actual_list.toString()
+					
+					String[] s = actual_list.toString().split(",")
+					String date_s = s[1]
+					String month_s = s[2]
+					
+					holiday_date = Integer.parseInt(date_s.trim())
+					
+					if(month_s.trim().equalsIgnoreCase("Jan")){
+						month_s ="1"
+						holiday_month = Integer.parseInt(month_s)
+						holidays.add(LocalDate.of(holiday_year,holiday_month, holiday_date))
+					}
+					else if(month_s.trim().equalsIgnoreCase("Feb")){
+						month_s ="2"
+						holiday_month = Integer.parseInt(month_s)
+						holidays.add(LocalDate.of(holiday_year,holiday_month, holiday_date))
+					}
+					else if(month_s.trim().equalsIgnoreCase("Mar")){
+						month_s ="3"
+						holiday_month = Integer.parseInt(month_s)
+						holidays.add(LocalDate.of(holiday_year,holiday_month, holiday_date))
+					}
+					else if(month_s.trim().equalsIgnoreCase("Apr")){
+						month_s ="4"
+						holiday_month = Integer.parseInt(month_s)
+						holidays.add(LocalDate.of(holiday_year,holiday_month, holiday_date))
+					}
+					else if(month_s.trim().equalsIgnoreCase("May")){
+						month_s ="5"
+						holiday_month = Integer.parseInt(month_s)
+						holidays.add(LocalDate.of(holiday_year,holiday_month, holiday_date))
+					}
+					else if(month_s.trim().equalsIgnoreCase("Jun")){
+						month_s ="6"
+						holiday_month = Integer.parseInt(month_s)
+						holidays.add(LocalDate.of(holiday_year,holiday_month, holiday_date))
+					}
+					else if(month_s.trim().equalsIgnoreCase("Jul")){
+						month_s ="7"
+						holiday_month = Integer.parseInt(month_s)
+						holidays.add(LocalDate.of(holiday_year,holiday_month, holiday_date))
+					}
+					else if(month_s.trim().equalsIgnoreCase("Aug")){
+						month_s ="8"
+						holiday_month = Integer.parseInt(month_s)
+						holidays.add(LocalDate.of(holiday_year,holiday_month, holiday_date))
+					}
+					else if(month_s.trim().equalsIgnoreCase("Sep")){
+						month_s ="9"
+						holiday_month = Integer.parseInt(month_s)
+						holidays.add(LocalDate.of(holiday_year,holiday_month, holiday_date))
+					}
+					else if(month_s.trim().equalsIgnoreCase("Oct")){
+						month_s ="10"
+						holiday_month = Integer.parseInt(month_s)
+						holidays.add(LocalDate.of(holiday_year,holiday_month, holiday_date))
+					}
+					else if(month_s.trim().equalsIgnoreCase("Nov")){
+						month_s ="11"
+						holiday_month = Integer.parseInt(month_s)
+						holidays.add(LocalDate.of(holiday_year,holiday_month, holiday_date))
+					}
+					else if(month_s.trim().equalsIgnoreCase("Dec")){
+						month_s ="12"
+						holiday_month = Integer.parseInt(month_s)
+						holidays.add(LocalDate.of(holiday_year,holiday_month, holiday_date))
+					}
+					
+					
+				}
+    		log.debug("holidays list :"+holidays)
+
+for (LocalDate localDate2 : holidays) {
+			println(localDate2);
+			if(previous_working_day.equals(localDate2)) {
+				println("It's Holiday");
+				DayOfWeek dayOfWeek_p = DayOfWeek.of(localDate2.get(ChronoField.DAY_OF_WEEK));
+				println "dayOfWeek_p : "+dayOfWeek_p
+				if (dayOfWeek_p == dayOfWeek_p.MONDAY) {
+					println("previous_working_day--- "+localDate2.minus(3, ChronoUnit.DAYS));
+					previous_working_day = localDate2.minus(3, ChronoUnit.DAYS)
+					
+				}
+				else if(dayOfWeek_p == dayOfWeek_p.SUNDAY){
+					println("previous_working_day--- "+localDate2.minus(2, ChronoUnit.DAYS));
+					previous_working_day = localDate2.minus(2, ChronoUnit.DAYS)
+					
+				}
+				else{
+					println("previous_working_day--- "+localDate2.minus(1, ChronoUnit.DAYS));
+					previous_working_day = localDate2.minus(1, ChronoUnit.DAYS)
+					
+				}
+			}
+				}
+			
+		  public  LocalDate get_previous_working_day(LocalDate date) {
+		    DayOfWeek dayOfWeek = DayOfWeek.of(date.get(ChronoField.DAY_OF_WEEK));
+		    
+		    if (dayOfWeek == dayOfWeek.MONDAY) {
+		   return date.minus(3, ChronoUnit.DAYS);
+		 }
+		 else if(dayOfWeek == dayOfWeek.SUNDAY){
+		   return date.minus(2, ChronoUnit.DAYS);
+		 }
+		 else{
+		      return date.minus(1, ChronoUnit.DAYS);
+		 }
+		   
+		  }
+		 println"previous_working_day - final : "+previous_working_day		 
+		 sys.defineVariable("previous_working_day", previous_working_day)
+	//
+	for (LocalDate localDate3 : holidays) {
+			println(localDate3);
+			if(second_previous_working_day.equals(localDate3)) {
+				println("It's Holiday");
+				DayOfWeek dayOfWeek_p = DayOfWeek.of(localDate3.get(ChronoField.DAY_OF_WEEK));
+				println "dayOfWeek_p : "+dayOfWeek_p
+				if (dayOfWeek_p == dayOfWeek_p.MONDAY) {
+					
+					println("second_previous_working_day--- "+localDate3.minus(4, ChronoUnit.DAYS));
+					second_previous_working_day = localDate2.minus(4, ChronoUnit.DAYS)
+				}
+				else if(dayOfWeek_p == dayOfWeek_p.SUNDAY){
+					
+					println("second_previous_working_day--- "+localDate3.minus(3, ChronoUnit.DAYS));
+					second_previous_working_day = localDate2.minus(3, ChronoUnit.DAYS)
+				}
+				else{
+					println("second_previous_working_day--- "+localDate3.minus(2, ChronoUnit.DAYS));
+					second_previous_working_day = localDate3.minus(2, ChronoUnit.DAYS)
+				}
+			}
+				}
+			
+		  public  LocalDate get_second_previous_working_day(LocalDate date) {
+		    DayOfWeek dayOfWeek = DayOfWeek.of(date.get(ChronoField.DAY_OF_WEEK));
+		    
+		    if (dayOfWeek == dayOfWeek.MONDAY) {
+		   return date.minus(4, ChronoUnit.DAYS);
+		 }
+		 else if(dayOfWeek == dayOfWeek.SUNDAY){
+		   return date.minus(3, ChronoUnit.DAYS);
+		 }
+		 else{
+		      return date.minus(2, ChronoUnit.DAYS);
+		 }
+		   
+		  }
+		 println"second_previous_working_day - final : "+second_previous_working_day		 
+		 sys.defineVariable("second_previous_working_day", second_previous_working_day)
+	//	 
+		 String local_date  = DateTimeFormatter.ofPattern("dd-MMM-yyyy").format(previous_working_day);
+		 String local_date1  = DateTimeFormatter.ofPattern("dd-MMM-yyyy").format(second_previous_working_day);
+	     String[] b = local_date.split("-");
+	    		 
+		  final_day = b[0]
+	      final_month = b[1]
+	      final_year = b[2]
+	     
+	     System.out.println("final_day==="+final_day);
+	     System.out.println("final_month==="+final_month);
+	     System.out.println("final_year==="+final_year);
+	     
+	     sys.defineVariable("final_day", final_day)
+	     sys.defineVariable("final_month", final_month)
+	     sys.defineVariable("final_year", final_year)
+	     
+	     // For the format 190820
+	     String local_date_yymmdd  = DateTimeFormatter.ofPattern("yyMMdd").format(previous_working_day);
+	     String local_date_ddmmyy  = DateTimeFormatter.ofPattern("ddMMyy").format(previous_working_day);
+	     String month_num = local_date_yymmdd.subSequence(2, 4);
+	     log.debug("month_num ==="+month_num)
+	     log.debug("local_date_yymmdd ==="+local_date_yymmdd)
+	     sys.defineVariable("local_date_yymmdd", local_date_yymmdd)
+	     sys.defineVariable("local_date_ddmmyy", local_date_ddmmyy)
+		 sys.defineVariable("month_num", month_num)
+
+		 ]]></script>
+		 
+<var-def name="tbl">	
+	<datastore name="ds_nop_update">
+		SELECT * FROM @this;
+		UPDATE @this SET previous_working_day = '${previous_working_day}' WHERE date = 'previous';
+		UPDATE @this SET previous_working_day = '${second_previous_working_day}' WHERE date = 'second_previous';
+	</datastore>	
+</var-def>
+<export include-original-data="true">
+<single-column name="previous_working_day" value="${previous_working_day}"></single-column>
+<single-column name="second_previous_working_day" value="${second_previous_working_day}"></single-column>
+</export>
+</config>
