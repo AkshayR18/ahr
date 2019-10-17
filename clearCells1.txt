@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config xmlns="http://web-harvest.sourceforge.net/schema/1.0/config" scriptlang="groovy">
+
+		<script><![CDATA[
+
+	import java.io.FileOutputStream;
+	import java.io.FileReader;
+	import java.io.IOException;
+
+	import org.apache.commons.lang.math.NumberUtils;
+	import org.apache.log4j.Logger;
+	import org.apache.poi.ss.usermodel.Row;
+	import org.apache.poi.ss.usermodel.Workbook;
+	import org.apache.poi.xssf.streaming.SXSSFSheet;
+	import org.apache.poi.xssf.streaming.SXSSFWorkbook;
+	import java.time.OffsetDateTime;
+	import java.time.ZoneOffset;
+	
+	import java.time.LocalDate;
+	import java.time.DayOfWeek;
+	import java.time.format.DateTimeFormatter;
+	import java.time.temporal.ChronoField;
+	import java.time.temporal.ChronoUnit;
+	
+	import org.apache.poi.hssf.usermodel.HSSFSheet;
+    import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+    import org.apache.poi.hssf.usermodel.HSSFChart.HSSFSeries;
+    import org.apache.poi.ss.SpreadsheetVersion;
+    import org.apache.poi.ss.usermodel.Cell;
+    import org.apache.poi.ss.usermodel.CellCopyPolicy;
+
+    import org.apache.poi.ss.usermodel.Sheet;
+
+    import org.apache.poi.ss.util.AreaReference;
+    import org.apache.poi.ss.util.CellRangeAddress;
+    import org.apache.poi.xssf.usermodel.XSSFSheet;
+    import org.apache.poi.xssf.usermodel.XSSFTable;
+    import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+		
+
+
+    
+			frontBulk = "C:/Users/irfaa/Desktop/NOP/Front_Bulk_2019-09-18.xlsx";
+			FileInputStream objFileInputStream = new FileInputStream(new File(frontBulk));
+		
+			XSSFWorkbook objWorkbook = new XSSFWorkbook(objFileInputStream);
+			XSSFSheet objSheet = objWorkbook.getSheetAt(0);
+
+				for (Row row : objSheet) {
+					for (Cell cell : row) {
+			cell.setCellValue("")
+			 }
+	      	}
+
+
+			objFileInputStream.close();
+			FileOutputStream output_file = new FileOutputStream(new File(frontBulk));
+			objWorkbook.write(output_file);
+			output_file.close();
+		
+]]></script>
+
+<export include-original-data="true">
+    
+ </export>
+</config>
