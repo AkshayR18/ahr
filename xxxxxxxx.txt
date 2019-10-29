@@ -1,0 +1,38 @@
+package apache_poi;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException; 
+import java.io.FileOutputStream; 
+import java.io.IOException; 
+import java.io.OutputStream; 
+import org.apache.poi.ss.usermodel.Cell; 
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.Color;
+import org.apache.poi.ss.usermodel.ExtendedColor;
+import org.apache.poi.ss.usermodel.FillPatternType; 
+import org.apache.poi.ss.usermodel.IndexedColors; 
+import org.apache.poi.ss.usermodel.Row; 
+import org.apache.poi.ss.usermodel.Sheet; 
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFCell;
+import org.apache.poi.xssf.usermodel.XSSFCellStyle;
+import org.apache.poi.xssf.usermodel.XSSFColor;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+public class ReadExcelColoredCells { 
+    public static void main(String[] args) throws Exception { 
+               
+         FileInputStream fileinput = new FileInputStream("C:/Users/HP/Desktop/WF-Training/BG_Color_Test.xlsx");
+      XSSFWorkbook xssf_wb = new XSSFWorkbook(fileinput);
+         
+            XSSFSheet sheet = xssf_wb.getSheet("Sheet"); 
+            Row row = sheet.getRow(1); 
+            XSSFCellStyle cellStyle = (XSSFCellStyle) row.getCell(1).getCellStyle();
+                    
+            Color get_color = cellStyle.getFillBackgroundXSSFColor();
+                      
+            System.out.println("get_color==="+((ExtendedColor) get_color).getARGBHex());           
+           
+            System.out.println("Done");
+            xssf_wb.close();
+    } 
+} 
