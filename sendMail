@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config xmlns="http://web-harvest.sourceforge.net/schema/1.0/config" scriptlang="groovy">
+   <var-def name="bp_link">
+        <template>${applicationHost}/workfusion/secure/business-process/edit/${item.getWrappedObject().getRun().getRootRunUuid()}</template>
+   </var-def> 
+    
+    <mail smtp-host="smtp.gmail.com"
+          smtp-port="465"
+          type="html"
+          from="akshay.raghoonundan@gmail.com"
+          to="akshay.raghoonundan@gmail.com"
+          subject="WebScraping + SendMail by Akshay H.Raghoonundan "
+          charset="UTF-8"
+          username="akshay.raghoonundan@gmail.com"
+          password="R@gh00nundun"
+          security="ssl"
+          >
+       
+        <![CDATA[<hr><em>]]>
+       <var name="bp_link"/> 
+    <![CDATA[</em>]]>     
+        
+ 
+    </mail>
+    <export include-original-data="true"></export>
+
+</config>
