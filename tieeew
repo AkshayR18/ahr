@@ -1,0 +1,20 @@
+  List<WebElement> materialComments = findElemenstByXpath("//*[@id='ContentPlaceHolder1_gvComponents']/tbody/tr")
+        log.warn("Total No of Material Comments::${materialComments.size()-1}")
+        if(materialComments) {
+            materialComments.eachWithIndex { tR, indx ->
+                List<WebElement> mTds = findElemenstByXpath("//*[@id='ContentPlaceHolder1_gvComponents']/tbody/tr["+(indx+1)+"]/td")
+                log.warn("material Div is ::${mTds.size()}")
+                if(mTds.size()>2 && 'Part No' != mTds[0]?.getText()) {
+
+                    NisMaterialComment materialComment = new NisMaterialComment().with {
+                        item_no         = itemNo
+                        quality_ref     = mTds?.size() > 12 ? mTds[4]?.getText() ?: ''  : mTds[mTds.size()-10]?.getText()  ?: ''
+                        material_status = mTds?.size() > 12 ? mTds[13]?.getText() ?: '' : mTds[mTds.size()-2]?.getText() ?: ''
+                        it
+                    }
+
+                    materialsList << materialComment
+                }
+            }
+
+        }
