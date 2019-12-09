@@ -9,3 +9,6 @@ Public Sub ExecuteSaving()
         MsgBox "No attachment(s) in the selected Outlook items.", vbInformation, "Message from Attachment Saver" 
     End If 
 End Sub
+
+
+https://gallery.technet.microsoft.com/office/Save-attachments-from-5b6bf54b
