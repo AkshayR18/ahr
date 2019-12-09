@@ -1,0 +1,11 @@
+Public Sub ExecuteSaving() 
+    Dim lNum As Long 
+     
+    lNum = SaveAttachmentsFromSelection 
+     
+    If lNum > 0 Then 
+        MsgBox CStr(lNum) & " attachment(s) was(were) saved successfully.", vbInformation, "Message from Attachment Saver" 
+    Else 
+        MsgBox "No attachment(s) in the selected Outlook items.", vbInformation, "Message from Attachment Saver" 
+    End If 
+End Sub
