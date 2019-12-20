@@ -1,0 +1,19 @@
+import java.io.IOException;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+
+	FileSystem fileSys = FileSystems.getDefault();
+    Path srcPath = fileSys.getPath("C:\\Users\\irfaa\\Desktop\\17 Dec 2019\\Loans_and_Overdraft_Extract_New.SQL");
+    Path destPath = fileSys.getPath("C:\\Users\\irfaa\\Desktop\\17 Dec 2019\\COPY OF Loans_and_Overdraft_Extract_New.SQL");
+	
+
+	log.info("Copy in progress...");
+	try{	
+        Files.copy(srcPath, destPath, StandardCopyOption.REPLACE_EXISTING);
+    } catch (IOException ioe) {
+      ioe.printStackTrace();
+    }
+ 
