@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config xmlns="http://web-harvest.sourceforge.net/schema/1.0/config" scriptlang="groovy">
+
+<var-def name="targetFolder">
+<template>17 Dec 2019</template>
+</var-def>
+
+<var-def name="targetLocation">
+<template>C:\\Users\\irfaa\\Desktop\\</template>
+</var-def>
+
+<var-def name="srcPath">
+<template>C:\\Users\\irfaa\\Downloads\\</template>
+</var-def>
+
+<var-def name="destPath">
+<template>C:\\Users\\irfaa\\Desktop\\</template>
+</var-def>
+
+<robotics-flow>
+		<robot driver="universal" close-on-completion="true"
+			start-in-private="false">
+			<capability name="SEARCH_ALL_WINDOWS" value="true" />
+			<capability name="CLOSE_ALL_WINDOWS" value="false" />
+	
+	<script><![CDATA[
+ //def filePathOnAgent = downloadFileOnAgent('https://file-examples.com/wp-content/uploads/2017/02/file_example_CSV_5000.csv')
+/*  downloadLink_1 = ('https://file-examples.com/wp-content/uploads/2017/02/file_example_CSV_5000.csv');
+ destDir = ('C:/Users/irfaa/Desktop/MCIB/test4.csv');
+ //downloadFileOnAgent('https://file-examples.com/wp-content/uploads/2017/02/file_example_CSV_5000.csv', 'C:/Users/irfaa/Desktop/MCIB/test1.csv')
+ try{
+ downloadFileOnAgent(downloadLink_1, destDir)
+ }
+ catch(Exception e){
+ log.info("Oh noooo");
+ } */
+ 
+import java.io.IOException;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+
+	FileSystem fileSys = FileSystems.getDefault();
+    Path srcPath = fileSys.getPath("C:\\Users\\irfaa\\Downloads\\Loans_and_Overdraft_Extract_New.SQL");
+    Path destPath = fileSys.getPath("C:\\Users\\irfaa\\Desktop\\17 Dec 2019\\Loans_and_Overdraft_Extract_New.SQL");
+	
+	Path tempPath = Files.createTempDirectory("17 Dec 2019");
+    Path dirToCreate = tempPath.resolve("C:\\Users\\irfaa\\Desktop\\17 Dec 2019");
+	
+	try{
+	Files.createDirectory(dirToCreate);
+	log.info("Directory created.");
+	}
+	catch(Exception e){
+	log.info("Directory detected.");
+	}
+	log.info("File movement in progress...");
+	try{	
+        Files.move(srcPath, destPath, StandardCopyOption.REPLACE_EXISTING);
+    } catch (IOException ioe) {
+      ioe.printStackTrace();
+    }
+ 
+   ]]></script>
+		</robot>
+
+</robotics-flow>
+<export include-original-data="true">
+
+</export>
+</config>
