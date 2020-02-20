@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config>
+ 
+    ...
+     
+        <secrets-vault-get alias="my-keys" />
+ 
+        <script><![CDATA[
+                Map entryMap = secureEntryMap.getWrappedObject();
+                com.freedomoss.crowdcontrol.webharvest.web.dto.SecureEntryDTO obj = entryMap.get("my-keys");
+                username = obj.getKey().toString();
+                password = obj.getValue().toString();
+        ]]></script>
+    <export include-original-data="true">
+    </export>
+    ...
+     
+</config>
