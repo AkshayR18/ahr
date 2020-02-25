@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<config xmlns="http://web-harvest.sourceforge.net/schema/1.0/config" scriptlang="groovy">
+
+ 
+
+              <var-def name="mailMessage">
+
+                     <template>This is an auto-generated e-mail by a bot.</template>
+
+              </var-def>
+
+             
+
+                     <script><![CDATA[
+
+                           log.info("Sending mail");
+
+                     ]]></script>
+
+             
+
+              <mail smtp-host="mail.absa.co.za"
+
+                    smtp-port="25"
+
+                    type="html"
+
+                    from = "FINBOT.REPAUTO@barclaysafrica.com"
+
+                    to = "FINBOT.REPAUTO@barclaysafrica.com"
+
+                    subject="Welcome to 2k20" >
+
+                   
+
+                    <![CDATA[<hr><em>]]>
+
+                    <var name="mailMessage"/>   
+
+                       <![CDATA[</em>]]>
+
+                       
+
+              </mail>
+
+      
+
+    <export include-original-data="true"></export>
+
+ 
+
+</config>
