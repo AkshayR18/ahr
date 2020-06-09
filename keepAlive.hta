@@ -1,0 +1,101 @@
+<! Keeps computer alive >
+<html>
+ 
+  <title>Keep Alive  1.1</title>
+ 
+  <HTA:APPLICATION ID="oHTA"
+    APPLICATIONNAME="Keep Alive"
+    BORDER="thin"
+    BORDERSTYLE="normal"
+    CAPTION="yes"
+    CONTEXTMENU="no"
+    ICON="search.ico"
+    INNERBORDER="no"
+    MAXIMIZEBUTTON="no"
+    MINIMIZEBUTTON="yes"
+    SELECTION="no"
+    SCROLL="no"
+    SHOWINTASKBAR="yes"
+    SINGLEINSTANCE="no"
+    SYSMENU="yes"
+    VERSION="1.1"
+    WINDOWSTATE="normal"
+  >
+ 
+<head>
+ 
+  <SCRIPT LANGUAGE="VBScript">
+  Dim strAppName
+ 
+  Sub window_OnLoad
+      Window.resizeTo 240, 120
+      strScriptName = "KeepAlive.hta"
+      strAppName = oHTA.APPLICATIONNAME & " " & oHTA.VERSION
+      nmsecs.focus()
+  End Sub
+ 
+  Sub Go()
+      nmgo.disabled = True
+      nmsecs.disabled = True
+      KeepAlive()
+  End Sub
+ 
+  Sub KeepAlive()
+      If Not IsNumeric(nmsecs.value) Then
+          MsgBox nmsecs.value  & " is not a valid entry.  Please enter a whole number greater than zero.", vbExclamation + vbSystemModal, strAppName
+          nmgo.disabled = False
+          nmsecs.disabled = False
+          nmsecs.value = 60
+          nmsecs.focus()
+          Exit Sub
+      End If
+      If CDbl(nmsecs.value) <> Int(nmsecs.value) Or CDbl(nmsecs.value) <= 0 Then
+          MsgBox nmsecs.value  & " is not a valid entry.  Please enter a whole number greater than zero.", vbExclamation + vbSystemModal, strAppName
+          nmgo.disabled = False
+          nmsecs.disabled = False
+          nmsecs.value = 60
+          nmsecs.focus()
+          Exit Sub
+      End If
+      Set wshShell = CreateObject("WScript.Shell")
+      WshShell.SendKeys "{NUMLOCK}"
+      WshShell.SendKeys "{NUMLOCK}"
+      '# Wshshell.Popup "Sent NumLocks", 3,,vbSystemModal
+      iTimerID = window.SetTimeOut("KeepAlive()", nmsecs.value * 1000)
+  End Sub
+ 
+  Sub CheckforEnter()
+      If window.event.keyCode = 13 And nmgo.disabled = False Then
+          Go()
+      End If
+  End Sub
+ 
+  Sub KeyDown()
+      '# MsgBox window.event.keyCode
+      Select Case window.event.keyCode
+          Case 116  'F5
+              window.event.returnValue = false
+              window.event.keyCode = 0
+          Case 70   'Ctrl + F
+              If window.event.ctrlKey Then window.event.returnValue = false
+          Case 27   'Escape
+              Window.Close()
+      End Select
+  End Sub
+ 
+  </script>
+ 
+  <style>
+    body    {font-size: 10pt; font-family: Arial; background-image:url(searchbackground.gif); background-color: buttonface;  filter:progid:DXImageTransform.Microsoft.Gradient(endColorstr='#4444FF', startColorstr='#FFFFFF', gradientType='0');}
+    .clsecs {font-size: 10pt; font-family: Ariel; background-color: white; width: 30; text-align: left; border-style: inset; border-width: 2px;}
+    .clgo   {width: 100;}
+  </style>
+ 
+</head>
+ 
+<body onKeyDown='KeyDown()' onKeyPress='CheckforEnter()'>
+  Keypress frequency:&nbsp&nbsp <input name="nmsecs" class="clsecs" value="60"/>&nbspsecs.<br/><br/>
+  <center><button name="nmgo" class="clgo" onclick="Go()">OK</button></center>
+ 
+</body>
+</html>
