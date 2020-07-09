@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config
+	xmlns="http://web-harvest.sourceforge.net/schema/1.0/config"
+	scriptlang="groovy">
+	<robotics-flow exclusive="true">
+		<robot name="universalDriver" driver="universal"
+			close-on-completion="true" start-in-private="true" maximize-on-startup="true">
+			<capability name="SEARCH_ALL_WINDOWS" value="true" />
+	<script><![CDATA[
+	        import 	org.openqa.selenium.chrome.ChromeOptions;
+			import 	org.openqa.selenium.chrome.ChromeDriver;
+			import org.openqa.selenium.Capabilities;
+			import org.openqa.selenium.WebDriver;
+			import org.openqa.selenium.remote.DesiredCapabilities;			
+		
+				System.setProperty("webdriver.chrome.driver","C:/RPAExpress/RPA/rpa-grid/drivers/windows/x32/chromedriver.exe");
+				String downloadFilepath = "R://Markets//NOP Reconciliation//Onshore//2019//08 Aug//290819//Import//Robot_NOP_Test//";
+				HashMap<String, Object> chromePrefs = new HashMap<String, Object>();
+				chromePrefs.put("profile.default_content_settings.popups", 0);
+				chromePrefs.put("download.default_directory", downloadFilepath);
+				ChromeOptions options = new ChromeOptions();
+				HashMap<String, Object> chromeOptionsMap = new HashMap<String, Object>();
+				options.setExperimentalOption("prefs", chromePrefs);
+				
+				DesiredCapabilities cap = DesiredCapabilities.chrome();
+				cap.setCapability(ChromeOptions.CAPABILITY, chromeOptionsMap);				
+				cap.setCapability(ChromeOptions.CAPABILITY, options);
+				driver = new ChromeDriver(cap);
+				driver.manage().window().maximize(); 
+				//driver.get("http://teamsites.intra.absaafrica/sites/mauritiusbrainsreports/Shared%20Documents/Forms/AllItems.aspx/");
+				driver.get("http://teamsites.intra.absaafrica/sites/mauritiusbrainsreports/Shared%20Documents/Forms/AllItems.aspx?RootFolder=%2Fsites%2Fmauritiusbrainsreports%2FShared%20Documents%2F2019-08-30%2FOnshore&FolderCTID=0x0120009329AC67ABC5B34C9B48FB84F03317F2&View=%7B0F789A18-174C-42E0-AB54-D36E3011E941%7D");
+				sleep(10000)
+				sendKeys("R09113389");
+				pressTab();
+				sendKeys("London03");
+				pressEnter();
+				driver.findElement(By.xpath("//*[@id='pagingWPQ2next']/a")).click();
+				sleep(5000)
+				driver.findElement(By.linkText("bsysun08")).click();
+			
+	]]></script>
+	
+	</robot>
+
+	</robotics-flow> 
+	
+	<export include-original-data="true"></export>
+
+</config>
