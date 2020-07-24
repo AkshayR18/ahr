@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config xmlns="http://web-harvest.sourceforge.net/schema/1.0/config" scriptlang="groovy">
+	
+<script><![CDATA[
+
+import java.io.IOException;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+	
+	FileSystem fileSys = FileSystems.getDefault();
+    Path srcPath = fileSys.getPath("C:\\Users\\Akshay\\Desktop\\The Tool Returns.accdb");
+    Path destPath = fileSys.getPath("C:\\Users\\Akshay\\Desktop\\target\\The Tool Returns.accdb");
+	
+	try{	
+	
+        Files.move(srcPath, destPath, StandardCopyOption.REPLACE_EXISTING);
+        log.info("File movement in progress...");
+        
+    } catch (IOException ioe) {
+      ioe.printStackTrace();
+      log.info("File movement failed.");
+      log.info("File might not be present.");
+    }
+]]></script>
+
+    <export include-original-data="true"></export>
+
+</config>
