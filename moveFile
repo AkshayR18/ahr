@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config xmlns="http://web-harvest.sourceforge.net/schema/1.0/config" scriptlang="groovy">
+	
+<script><![CDATA[
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
+      //moveFile("C:/Users/Akshay/Desktop/The Tool Returns.accdb", "C:/Users/Akshay/Desktop/target/The Tool Returns.accdb");
+
+      Path result = null;
+      String src = "C:\\Users\\Akshay\\Desktop\\The Tool Returns.accdb"
+      String dest = "C:\\Users\\Akshay\\Desktop\\target\\The Tool Returns.accdb"
+     
+      try {
+         result = Files.move(Paths.get(src), Paths.get(dest));
+      } catch (IOException e) {
+         log.info("Exception while moving file: " + e.getMessage());
+      }
+      if(result != null) {
+         log.info("File moved successfully.");
+      }else{
+         log.info("File movement failed.");
+         log.info("File might not be present.");
+      }
+
+
+]]></script>
+
+    <export include-original-data="true"></export>
+
+</config>
