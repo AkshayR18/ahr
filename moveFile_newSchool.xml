@@ -10,19 +10,22 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 	
+	String username = System.getProperty("user.name");
+	log.info("User: "+username)
+	
 	FileSystem fileSys = FileSystems.getDefault();
-    Path srcPath = fileSys.getPath("C:\\Users\\Akshay\\Desktop\\The Tool Returns.accdb");
-    Path destPath = fileSys.getPath("C:\\Users\\Akshay\\Desktop\\target\\The Tool Returns.accdb");
+    Path srcPath = fileSys.getPath("C:\\Users\\"+username+"\\Desktop\\The Tool Returns.accdb");
+    Path destPath = fileSys.getPath("C:\\Users\\"+username+"\\Desktop\\target\\The Tool Returns.accdb");
 	
 	try{	
 	
         Files.move(srcPath, destPath, StandardCopyOption.REPLACE_EXISTING);
         log.info("File movement in progress...");
         
-    } catch (IOException ioe) {
-      ioe.printStackTrace();
+    } catch (Exception e) {
       log.info("File movement failed.");
       log.info("File might not be present.");
+      
     }
 ]]></script>
 
