@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config xmlns="http://web-harvest.sourceforge.net/schema/1.0/config" scriptlang="groovy">
+<robotics-flow>
+<robot driver="universal" start-in-private="false">
+			<capability name ="SEARCH_ALL_WINDOWS" value="true"/>
+			<capability name="CLOSE_ALL_WINDOWS" value="false"/>
+
+<script><![CDATA[
+import  java.io.*;
+import java.io.File; 
+import  org.apache.poi.xssf.usermodel.XSSFSheet;
+import  org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import  org.apache.poi.xssf.usermodel.XSSFRow;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.File;
+import java.io.FileReader;
+import java.nio.file.*;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.ss.util.*;
+import org.apache.poi.xssf.usermodel.*;
+import java.time.*;
+import org.apache.commons.io.comparator.LastModifiedFileComparator;
+import com.workfusion.rpa.helpers.resources.Filter;
+import java.time.temporal.ChronoUnit;
+import java.util.Date;
+import java.util.Calendar;
+import java.text.SimpleDateFormat;
+import java.sql.Timestamp;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.time.LocalDate;
+import java.time.DayOfWeek;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoField;
+import org.apache.poi.ss.SpreadsheetVersion;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellCopyPolicy;
+import org.apache.poi.xssf.usermodel.XSSFCell;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.util.AreaReference;
+import org.apache.poi.ss.util.CellRangeAddress;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFTable;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import com.workfusion.rpa.helpers.Excel;
+import org.apache.poi.xssf.*;
+import org.apache.poi.ss.usermodel.WorkbookFactory
+import org.apache.poi.ss.usermodel.Workbook 
+import org.apache.poi.ss.usermodel.Row
+import org.apache.poi.ss.usermodel.Row.MissingCellPolicy
+import org.apache.poi.ss.usermodel.CellType
+import org.apache.commons.lang.math.NumberUtils;
+import org.openqa.selenium.By
+import org.openqa.selenium.By.ByXPath
+import com.workfusion.rpa.helpers.selectors.ByText
+import com.google.gson.Gson;
+import org.apache.poi.ss.usermodel.CreationHelper;
+import org.apache.poi.ss.usermodel.FormulaEvaluator;
+import com.workfusion.studio.rpa.recorder.api.*
+import com.workfusion.studio.rpa.recorder.api.types.*
+import com.workfusion.studio.rpa.recorder.api.custom.*
+import com.workfusion.studio.rpa.recorder.api.internal.representation.*
+import com.workfusion.bot.exception.*    
+import java.io.BufferedWriter;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import org.apache.commons.lang3.time.DateUtils;  
+  
+
+    	String username = System.getProperty("user.name");
+    	String filename =( "C:\\Users\\"+username+"\\Desktop\\tempExcel.xlsx");
+        
+        File excel = new File(filename);
+        
+       /*  try {
+            XSSFWorkbook workbook = new XSSFWorkbook();
+            XSSFSheet frontArena_bal = workbook.createSheet("frontArena");  
+			XSSFSheet brains_bal = workbook.createSheet("brains"); 
+			
+            FileOutputStream fileOut = new FileOutputStream(excel);
+            workbook.write(fileOut);
+            fileOut.close();
+            workbook.close();
+            System.out.println("Your excel file has been generated!");
+
+        } catch ( Exception ex ) {
+            System.out.println(ex);
+        } */
+        
+ 
+/*         sendKeys("#r");s
+        sendKeys("notepad")
+        pressEnter();
+        sendKeys("Hello MF")
+        sendKeys(Keys.chord(Keys.LEFT_ALT, "{F4}"));
+        pressTab();
+        pressEnter(); */
+
+
+/*         try {
+        	String temporaryExcel =( "C:\\Users\\"+username+"\\Desktop\\NewExcelFile.xlsx");
+            File tempExcel = new File(temporaryExcel);
+	  		tempExcel.delete();
+		    System.out.println("Temp Excel Deleted.");
+	    }
+	    catch(Exception ex){
+	    	 System.out.println(ex);
+	    } */
+	    
+		FileInputStream input = new FileInputStream(excel);
+		XSSFWorkbook wb = new XSSFWorkbook(input);
+		XSSFSheet frontArena_balance = wb.getSheet("frontArena");
+		XSSFSheet brains_balance = wb.getSheet("brains");
+		
+		String numOfRows1 = frontArena_balance.getLastRowNum()-1; //number of rows below column names
+		String numOfRows2 = brains_balance.getLastRowNum()-1; //number of rows below column names
+		System.out.println("Number of records(Front Arena): "+numOfRows1);
+	    System.out.println("Number of records(Brains): "+numOfRows2);
+	    
+	    for (int rowIndex = 1; rowIndex <= frontArena_balance.getLastRowNum(); rowIndex++){
+	    
+	    String front_currency = frontArena_balance.getRow(rowIndex).getCell(0,Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
+		String front_diffence = frontArena_balance.getRow(rowIndex).getCell(5,Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
+		log.info("Front Arena  -  Currency: "+front_currency+"  Difference: "+front_diffence)
+		
+			if(front_diffence != "0.0"){ 
+			log.info("There is a difference mf.");
+			} 
+
+	    }
+	    
+	    for (int rowIndex2 = 1; rowIndex2 <= brains_balance.getLastRowNum(); rowIndex2++){
+		
+		String brains_currency = brains_balance.getRow(rowIndex2).getCell(0,Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
+		String brains_diffence = brains_balance.getRow(rowIndex2).getCell(5,Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
+		log.info("Brains  -  Currency: "+brains_currency+"  Difference: "+brains_diffence)
+			
+			if(brains_diffence != "0.0"){ 
+			log.info("There is a difference mf.");
+			} 
+
+			
+	    }
+	    
+		]]></script>
+	</robot>
+</robotics-flow>
+    <export include-original-data="true"></export>
+
+</config>
