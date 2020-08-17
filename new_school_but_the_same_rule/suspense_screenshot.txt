@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config xmlns="http://web-harvest.sourceforge.net/schema/1.0/config" scriptlang="groovy">
+
+<robotics-flow>
+<robot driver = "universal" close-on-completion="true" name = "universalDriver">
+	<script><![CDATA[
+	
+	import com.workfusion.studio.rpa.recorder.api.*
+	import com.workfusion.studio.rpa.recorder.api.types.*
+	import com.workfusion.studio.rpa.recorder.api.custom.*
+	import com.workfusion.studio.rpa.recorder.api.internal.representation.*
+	import com.workfusion.bot.exception.*   
+	
+	inDesktop(){
+	String bobo_file_path = "C:\\Users\\Akshay\\Downloads\\bobo report\\Domestic BOBO 20200813 - xxx.xlsm"
+	String suspense_screenshot = "C:\\Users\\Akshay\\Desktop\\newDir\\suspense_screenshot.png"
+	
+	sendKeys("#r");
+	switchTo().window('Run')
+	setClipboardText(bobo_file_path);
+	pressCtrlV();
+	cleanClipboard();
+	pressEnter()
+	
+	sleep(5000);
+	switchToExistingWindow(new WindowDescriptor("", "(?i).*\\QDomestic BOBO\\E.*", false, true).toString(), 10000)
+	sendKeys("^g");
+	sleep(1500);
+	switchTo().window('Go To')
+	sendKeys("Suspense{!}R1");
+	pressEnter()
+	
+	switchToExistingWindow(new WindowDescriptor("", "(?i).*\\QDomestic BOBO\\E.*", false, true).toString(), 10000)
+	sleep(1500);
+	sendKeys("!{DOWN}");
+	sleep(1500);
+	
+	try{
+	$('[CLASS:CheckBox;NAME:-]').should(EXIST);
+	$('[CLASS:CheckBox;NAME:-]').click();
+	log.info("checkbox - checked");
+	}
+	catch(Exception e){ 
+	 log.info("checkbox - not found.");
+	}
+	
+	try{
+	$('[CLASS:CheckBox;NAME:(Blanks)]').should(EXIST);
+	$('[CLASS:CheckBox;NAME:(Blanks)]').click();
+	log.info("checkbox (Blanks) checked.");
+	}
+	catch(Exception e){ 
+	 log.info("checkbox (Blanks) not found.");
+	}
+	
+	try{
+	$('[CLASS:NetUIButton;NAME:OK]').should(EXIST);
+	$('[CLASS:NetUIButton;NAME:OK]').click();
+	log.info("OK button found.");
+	}
+	catch(Exception e){ 
+	 log.info("OK button not found.");
+	}
+	
+	try{
+	$('ggt').should(EXIST);
+	$('ggt').click();
+	log.info("ggt found.");
+	}
+	catch(Exception e){ 
+	 log.info("mari ggt");
+	}
+			
+	sleep(1500);
+	sendKeys("^g");
+	sleep(1500);
+	switchTo().window('Go To')
+	sendKeys("A1");
+	sleep(1500);
+	pressEnter();
+	
+	switchToExistingWindow(new WindowDescriptor("", "(?i).*\\QDomestic BOBO\\E.*", false, true).toString(), 10000)
+	sendKeys("+^{RIGHT}");		
+	sleep(1500);
+	sendKeys("+^{DOWN}");
+	sleep(1500);
+	pressCtrlC();
+	
+	sleep(1500);
+	open('mspaint.exe');
+	sleep(2000);
+	switchToExistingWindow(new WindowDescriptor("", "(?i).*\\QPaint\\E.*", false, true).toString(), 10000)
+	pressCtrlV();
+	sleep(1500);
+	cleanClipboard();
+	sendKeys("^s");
+	switchToExistingWindow(new WindowDescriptor("", "(?i).*\\QSave As\\E.*", false, true).toString(), 10000)
+	setClipboardText(suspense_screenshot);
+	pressCtrlV();
+	cleanClipboard();
+	pressEnter();
+	switchToExistingWindow(new WindowDescriptor("", "(?i).*\\QPaint\\E.*", false, true).toString(), 10000)
+	sleep(1500);
+	sendKeys(Keys.chord(Keys.LEFT_ALT, "{F4}"));
+	
+	switchToExistingWindow(new WindowDescriptor("", "(?i).*\\QDomestic BOBO\\E.*", false, true).toString(), 10000)
+	sendKeys(Keys.chord(Keys.LEFT_ALT, "{F4}"));
+	switchToExistingWindow(new WindowDescriptor("", "(?i).*\\QMicrosoft\\E.*", false, true).toString(), 10000)
+	sendKeys("{RIGHT}");
+	pressEnter();
+	
+	}		
+		]]></script>
+ </robot>
+</robotics-flow>
+    <export include-original-data="true"></export>
+
+</config>

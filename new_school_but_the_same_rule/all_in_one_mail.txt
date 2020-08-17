@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config xmlns="http://web-harvest.sourceforge.net/schema/1.0/config" scriptlang="groovy">
+		
+	<script><![CDATA[		
+		                             
+		String greeting = "Dear Yuds,"
+		String mailMessage = "Regards,"
+		String mailMessage2 = "PCG Bot"
+		
+		sys.defineVariable("greeting", greeting)
+		sys.defineVariable("mail_message", mailMessage)
+		sys.defineVariable("mail_message2", mailMessage2)
+		
+		String bs = "1. Balance Sheet/P&L difference between DMR and Brains: "
+		String cash_wash ="2. Cash Breaks: "
+		String suspense ="3. Suspense Account Breaks: "
+		String internal_cash_wash ="4. Internal Cash Breaks: "
+		
+		String bs_screenshot = "C:\\Users\\Akshay\\Desktop\\newDir\\bs_screenshot.png"
+		String cash_wash_screenshot = "C:\\Users\\Akshay\\Desktop\\newDir\\cash_wash_screenshot.png"
+		String suspense_screenshot = "C:\\Users\\Akshay\\Desktop\\newDir\\suspense_screenshot.png"
+		String internal_cash_wash_screenshot = "C:\\Users\\Akshay\\Desktop\\newDir\\internal_cash_wash_screenshot.png"
+		
+		sys.defineVariable("bs", bs)
+		sys.defineVariable("cash_wash", cash_wash)
+		sys.defineVariable("suspense", suspense)
+		sys.defineVariable("internal_cash_wash", internal_cash_wash)
+		
+		sys.defineVariable("bs_screenshot", bs_screenshot)
+		sys.defineVariable("cash_wash_screenshot", cash_wash_screenshot)
+		sys.defineVariable("suspense_screenshot", suspense_screenshot)
+		sys.defineVariable("internal_cash_wash_screenshot", internal_cash_wash_screenshot)
+		
+	]]></script>
+		    <mail smtp-host="smtp.gmail.com"
+		          smtp-port="465"
+		          type="html"
+		          from="akshay.raghoonundan@gmail.com"
+		          to="akshay.raghoonundan@gmail.com, yudish.ramdhayan@nanobnk.com"
+		          subject="BOBO Dummy mail"
+		          charset="UTF-8"
+		          username="akshay.raghoonundan@gmail.com"
+		          password="R@gh00nundun"
+		          security="ssl"
+		          >
+
+					<![CDATA[<p>]]>
+                    <var name="greeting"/>                                  
+                    <![CDATA[<br></p>]]>
+
+ 					
+ 					<![CDATA[<p><u>]]>
+                    <var name="bs"/>                                  
+                    <![CDATA[<br></p></u>]]>
+ 					
+						<![CDATA[ <img src="]]>
+						<mail-attach inline="true">
+						<file path="${bs_screenshot}" type="binary"/>
+						</mail-attach>
+						<![CDATA[ "> ]]>
+						
+					<![CDATA[<p><u>]]>
+                    <var name="cash_wash"/>                                  
+                    <![CDATA[<br></p></u>]]>
+ 					
+						<![CDATA[ <img src="]]>
+						<mail-attach inline="true">
+						<file path="${cash_wash_screenshot}" type="binary"/>
+						</mail-attach>
+						<![CDATA[ "> ]]>
+						
+					<![CDATA[<p><u>]]>
+                    <var name="suspense"/>                                  
+                    <![CDATA[<br></p></u>]]>
+ 					
+						<![CDATA[ <img src="]]>
+						<mail-attach inline="true">
+						<file path="${suspense_screenshot}" type="binary"/>
+						</mail-attach>
+						<![CDATA[ "> ]]>		
+
+					<![CDATA[<p><u>]]>
+                    <var name="internal_cash_wash"/>                                  
+                    <![CDATA[<br></p></u>]]>
+ 					
+						<![CDATA[ <img src="]]>
+						<mail-attach inline="true">
+						<file path="${internal_cash_wash_screenshot}" type="binary"/>
+						</mail-attach>
+						<![CDATA[ "> ]]>
+
+                    <![CDATA[<p>]]>
+                    <var name="mail_message"/>            
+                    <![CDATA[<br></p>]]>
+
+                   
+
+                    <![CDATA[<p>]]> 
+                     <var name="mail_message2"/>  
+                    <![CDATA[</p>]]>  
+
+ 
+
+              </mail>
+
+ 
+
+     
+
+ 
+
+    <export include-original-data="true"></export>
+
+ 
+
+
+ 
+
+</config>
