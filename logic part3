@@ -1,0 +1,350 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config xmlns="http://web-harvest.sourceforge.net/schema/1.0/config" scriptlang="groovy">
+
+<var-def name="properties_nop">
+		<datastore name="ds_nop_config">
+			<template>select * from @this</template>
+		</datastore>
+	</var-def>
+
+	<script><![CDATA[
+		def NOP_CONFIGS = [:]
+		properties_nop.getWrappedObject().toList().each { property ->
+			NOP_CONFIGS.put(property.get("property_name").toString(), property.get("property_value").toString())
+		}
+		sys.defineVariable("NOP_CONFIGS", NOP_CONFIGS)
+	]]></script>
+<robotics-flow>
+	<robot driver="universal" close-on-completion="true">
+	<script><![CDATA[ 
+		import org.apache.poi.xssf.usermodel.*
+		import org.apache.poi.ss.usermodel.Cell	
+		import org.apache.poi.ss.usermodel.Row;
+		import org.apache.poi.ss.usermodel.Sheet;
+		import org.apache.poi.hssf.usermodel.*
+		import org.apache.poi.ss.usermodel.DateUtil
+		import org.apache.poi.ss.usermodel.CellType
+		import org.apache.poi.ss.usermodel.CellStyle
+		import java.text.SimpleDateFormat
+		import org.apache.poi.ss.usermodel.*
+		import java.time.LocalDate;
+		import java.time.Month;
+		import java.nio.file.Files
+		import groovy.time.*
+		import java.time.format.DateTimeFormatter;
+		import java.io.File;
+		import java.io.FileOutputStream;
+		import java.io.FileReader;
+		import java.io.IOException;
+		import java.nio.file.*;
+		import org.apache.poi.ss.usermodel.*;
+		import org.apache.poi.ss.util.*;
+		import org.apache.poi.xssf.usermodel.*;
+		import java.time.*;
+		import org.apache.commons.io.comparator.LastModifiedFileComparator;	
+		import com.workfusion.rpa.helpers.resources.Filter;
+		import java.time.temporal.ChronoUnit;
+		import java.util.Date;
+		import java.util.Calendar;
+		import java.text.SimpleDateFormat;
+		import java.sql.Timestamp;
+		import java.time.OffsetDateTime;
+		import java.time.ZoneOffset;
+		import java.time.LocalDate;
+		import java.time.DayOfWeek;
+		import java.time.format.DateTimeFormatter;
+		import java.time.temporal.ChronoField;
+		import org.apache.poi.ss.SpreadsheetVersion;
+		import org.apache.poi.ss.usermodel.Cell;
+		import org.apache.poi.ss.usermodel.CellCopyPolicy;
+		import org.apache.poi.xssf.usermodel.XSSFCell;
+		import org.apache.poi.ss.usermodel.Sheet;
+		import org.apache.poi.ss.util.AreaReference;
+		import org.apache.poi.ss.util.CellRangeAddress;
+		import org.apache.poi.xssf.usermodel.XSSFSheet;
+		import org.apache.poi.xssf.usermodel.XSSFTable;
+		import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+		import com.workfusion.rpa.helpers.Excel;
+		import org.apache.poi.xssf.*;
+		import org.apache.poi.ss.usermodel.WorkbookFactory
+		import org.apache.poi.ss.usermodel.Workbook 
+		import org.apache.poi.ss.usermodel.Row
+		import org.apache.poi.ss.usermodel.Row.MissingCellPolicy
+		import org.apache.poi.ss.usermodel.CellType
+		import org.apache.commons.lang.math.NumberUtils;
+		import org.openqa.selenium.By
+		import org.openqa.selenium.By.ByXPath
+		import com.workfusion.rpa.helpers.selectors.ByText
+		import com.google.gson.Gson;
+		import org.apache.poi.ss.usermodel.CreationHelper;
+		import org.apache.poi.ss.usermodel.FormulaEvaluator;	
+		import com.workfusion.studio.rpa.recorder.api.*
+		import com.workfusion.studio.rpa.recorder.api.types.*
+		import com.workfusion.studio.rpa.recorder.api.custom.*
+		import com.workfusion.studio.rpa.recorder.api.internal.representation.*
+		import com.workfusion.bot.exception.*    	   
+		import java.io.BufferedWriter;
+		import java.io.File;
+		import java.io.FileOutputStream;
+		import java.io.OutputStreamWriter;
+		import java.io.Writer;
+		import java.nio.file.FileSystem;
+		import java.nio.file.FileSystems;
+		import java.nio.file.Files;
+		import java.nio.file.Path;
+		import java.nio.file.StandardCopyOption;
+		import org.apache.commons.lang3.time.DateUtils;
+			
+		
+		boolean run = true;
+		if(run == true){
+
+		Date startTime = new Date()
+		
+		log.info(" Latest code - 25th Feb 2020  -- Need to change Initial Index in Map ");
+		 
+		String previous_day = previous_working_day
+		 
+		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+		LocalDate previous_working_day = LocalDate.parse(previous_day.toString(), formatter);
+		 
+		String local_date  = DateTimeFormatter.ofPattern("dd-MMM-yyyy").format(previous_working_day);
+	    String[] b = local_date.split("-");
+	    		 
+		final_day = b[0]
+	    final_month = b[1]	      
+	    final_year = b[2]	     	  
+	     		 
+	    String local_date_ddmmyy  = DateTimeFormatter.ofPattern("ddMMyy").format(previous_working_day);
+	    String local_date_ddmmyyyy  = DateTimeFormatter.ofPattern("ddMMyyyy").format(previous_working_day);
+	    String local_date_yymmdd  = DateTimeFormatter.ofPattern("yyMMdd").format(previous_working_day);
+		String previous_working_day_ddMMyyy_dot  = DateTimeFormatter.ofPattern("dd.MM.yyyy").format(previous_working_day);
+		String previous_working_day_ddMMyyy  = DateTimeFormatter.ofPattern("dd/MM/yyyy").format(previous_working_day);
+	    String month_num = local_date_ddmmyy.subSequence(2, 4);	
+        
+		Date dateNow = new Date();
+		LocalDate dateNow1 = LocalDate.now();
+        log.info("Date is : "+dateNow);
+        SimpleDateFormat sdf = new SimpleDateFormat("ddMMyyyy");
+        String todayDate = sdf.format(dateNow);
+        log.info(" present date in required format is : "+todayDate);
+		 
+		 String current_date = DateTimeFormatter.ofPattern("dd/MM/yyyy").format(dateNow1);
+
+		String summary_Filepath = NOP_CONFIGS.getWrappedObject().get("Market_NOP_Reconciliation_Onshore").toString()+"${final_year}//Robot_Data//${month_num} ${final_month}//${local_date_ddmmyy}//MISC//NOP Summary "+local_date_ddmmyy+".xlsx";
+		String comparison_Filepath = NOP_CONFIGS.getWrappedObject().get("Market_NOP_Reconciliation_Onshore").toString()+"${final_year}//Robot_Data//${month_num} ${final_month}//${local_date_ddmmyy}//MISC//Comparison NOP Summary.xlsx";
+		String arena_Filepath = NOP_CONFIGS.getWrappedObject().get("Market_NOP_Reconciliation_Onshore").toString()+"${final_year}//Robot_Data//${month_num} ${final_month}//${local_date_ddmmyy}//MISC//Front arena overdue items as at "+previous_working_day_ddMMyyy_dot+".xlsx";		
+		String MR_ON_EOD_FX_Deals_Outstanding = NOP_CONFIGS.getWrappedObject().get("Market_NOP_Reconciliation_Onshore").toString()+"${final_year}//Robot_Data//${month_num} ${final_month}//${local_date_ddmmyy}//Import//MR_ON_EOD_FX_Deals_Outstanding_"+local_date_yymmdd+".csv";
+		String MR_ON_EOD_NOP_Daily_Trades_9pm_xxxxxx = NOP_CONFIGS.getWrappedObject().get("Market_NOP_Reconciliation_Onshore").toString()+"${final_year}//Robot_Data//${month_num} ${final_month}//${local_date_ddmmyy}//Import//MR_ON_EOD_NOP_Daily_Trades_9pm_"+local_date_yymmdd+".xls";
+		String DMR = NOP_CONFIGS.getWrappedObject().get("Market_NOP_Reconciliation_Onshore").toString()+"${final_year}//Robot_Data//${month_num} ${final_month}//${local_date_ddmmyy}//Import//DMR "+local_date_yymmdd+".xls";
+		String EOD_FC_Notes_xxxxxx = NOP_CONFIGS.getWrappedObject().get("Market_NOP_Reconciliation_Onshore").toString()+"${final_year}//Robot_Data//${month_num} ${final_month}//${local_date_ddmmyy}//Import//EOD_FC_Notes_"+local_date_yymmdd+".xlsx";
+		String MR_ON_EOD_NOP_Report_Daily_9pm_xxxxxx = NOP_CONFIGS.getWrappedObject().get("Market_NOP_Reconciliation_Onshore").toString()+"${final_year}//Robot_Data//${month_num} ${final_month}//${local_date_ddmmyy}//Import//MR_ON_EOD_NOP_Report_Daily_9pm_"+local_date_yymmdd+".csv";
+		String bsysun08 = NOP_CONFIGS.getWrappedObject().get("Market_NOP_Reconciliation_Onshore").toString()+"${final_year}//Robot_Data//${month_num} ${final_month}//${local_date_ddmmyy}//Import//bsysun08.txt";		
+		String OutstandingFrontOnshore = NOP_CONFIGS.getWrappedObject().get("Market_NOP_Reconciliation_Onshore").toString()+"${final_year}//Robot_Data//${month_num} ${final_month}//${local_date_ddmmyy}//OutstandingFrontOnshore_"+todayDate+".xlsx";
+		String OutstandingBrainsOnshore_Filepath = NOP_CONFIGS.getWrappedObject().get("Market_NOP_Reconciliation_Onshore").toString()+"${final_year}//Robot_Data//${month_num} ${final_month}//${local_date_ddmmyy}//OutstandingBrainsOnshore_"+todayDate+".xlsx";		
+		String file_path = (NOP_CONFIGS.getWrappedObject().get("part3_logic").toString());		
+		String Comparison_NOP_Summary = comparison_Filepath;		
+		//String MR_ON_EOD_FX_Deals_Outstanding = "2";			
+		String nop_summary_xxxxxx = summary_Filepath;			
+		//String MR_ON_EOD_NOP_Daily_Trades_9pm_xxxxxx = "4"			
+		String Outstanding_FrontOnshore_xxxxxxxx= OutstandingFrontOnshore;	
+		//String DMR = "6";		
+		//String EOD_FC_Notes_xxxxxx = "7";			
+		//String MR_ON_EOD_NOP_Report_Daily_9pm_xxxxxx = "8";			
+		String bsysun08_txt = bsysun08;			
+		String Front_arena_Overdue_items_NOP_Summary = arena_Filepath;			
+		String OutstandingBrainsOnshore = OutstandingBrainsOnshore_Filepath;
+		String previous_Date = previous_working_day_ddMMyyy;
+		
+		FileInputStream input = new FileInputStream(file_path);
+		XSSFWorkbook wb = new XSSFWorkbook(input);
+		XSSFSheet main_sheet = wb.getSheet("Main");
+		
+		main_sheet.getRow(5).getCell(5,Row.MissingCellPolicy.RETURN_BLANK_AS_NULL).setCellValue(Comparison_NOP_Summary.toString());
+		String comparison_nop_summary = main_sheet.getRow(5).getCell(5,Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);	
+		log.info("comparison_nop_summary: "+comparison_nop_summary);
+		
+		main_sheet.getRow(6).getCell(5,Row.MissingCellPolicy.RETURN_BLANK_AS_NULL).setCellValue(MR_ON_EOD_FX_Deals_Outstanding.toString());
+		String FX_Deals_Outstanding = main_sheet.getRow(6).getCell(5,Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);	
+		log.info("FX_Deals_Outstanding: "+FX_Deals_Outstanding);
+		
+		main_sheet.getRow(7).getCell(5,Row.MissingCellPolicy.RETURN_BLANK_AS_NULL).setCellValue(nop_summary_xxxxxx.toString());
+		String nop_summary_xx = main_sheet.getRow(7).getCell(5,Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);	
+		log.info("nop_summary_xx: "+nop_summary_xx);
+		
+		main_sheet.getRow(8).getCell(5,Row.MissingCellPolicy.RETURN_BLANK_AS_NULL).setCellValue(MR_ON_EOD_NOP_Daily_Trades_9pm_xxxxxx.toString());
+		String NOP_Daily_Trades_9pm_xxxxxx = main_sheet.getRow(8).getCell(5,Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);	
+		log.info("NOP_Daily_Trades_9pm_xxxxxx: "+NOP_Daily_Trades_9pm_xxxxxx);
+		
+		main_sheet.getRow(9).getCell(5,Row.MissingCellPolicy.RETURN_BLANK_AS_NULL).setCellValue(Outstanding_FrontOnshore_xxxxxxxx.toString());
+		String Outstanding_FrontOnshore = main_sheet.getRow(9).getCell(5,Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);	
+		log.info("Outstanding_FrontOnshore: "+Outstanding_FrontOnshore);
+		
+		main_sheet.getRow(10).getCell(5,Row.MissingCellPolicy.RETURN_BLANK_AS_NULL).setCellValue(DMR.toString());
+		String DMR_cell = main_sheet.getRow(10).getCell(5,Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);	
+		log.info("DMR_cell: "+DMR_cell);
+		
+		main_sheet.getRow(11).getCell(5,Row.MissingCellPolicy.RETURN_BLANK_AS_NULL).setCellValue(EOD_FC_Notes_xxxxxx.toString());
+		String FC_Notes_xxxxxx = main_sheet.getRow(11).getCell(5,Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);	
+		log.info("FC_Notes_xxxxxx: "+FC_Notes_xxxxxx);
+		
+		main_sheet.getRow(12).getCell(5,Row.MissingCellPolicy.RETURN_BLANK_AS_NULL).setCellValue(MR_ON_EOD_NOP_Report_Daily_9pm_xxxxxx.toString());
+		String NOP_Report_Daily_9pm_xxxxxx = main_sheet.getRow(12).getCell(5,Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);	
+		log.info("NOP_Report_Daily_9pm_xxxxxx: "+NOP_Report_Daily_9pm_xxxxxx);
+		
+		main_sheet.getRow(13).getCell(5,Row.MissingCellPolicy.RETURN_BLANK_AS_NULL).setCellValue(bsysun08_txt.toString());
+		String bsysun08 = main_sheet.getRow(13).getCell(5,Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);	
+		log.info("bsysun08: "+bsysun08);
+		
+		main_sheet.getRow(14).getCell(5,Row.MissingCellPolicy.RETURN_BLANK_AS_NULL).setCellValue(Front_arena_Overdue_items_NOP_Summary.toString());
+		String Front_arena_Overdue = main_sheet.getRow(14).getCell(5,Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);	
+		log.info("Front_arena_Overdue: "+Front_arena_Overdue);
+		
+		main_sheet.getRow(15).getCell(5,Row.MissingCellPolicy.RETURN_BLANK_AS_NULL).setCellValue(OutstandingBrainsOnshore.toString());
+		String OutstandingBrainsOnshore_cell = main_sheet.getRow(15).getCell(5,Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);	
+		log.info("OutstandingBrainsOnshore_cell: "+OutstandingBrainsOnshore_cell);
+		
+		main_sheet.getRow(16).getCell(5,Row.MissingCellPolicy.RETURN_BLANK_AS_NULL).setCellValue(previous_Date.toString());
+		String previous_Date_ = main_sheet.getRow(16).getCell(5,Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);	
+		log.info("previous_Date: "+previous_Date_);
+		
+		FileOutputStream fos = new FileOutputStream(file_path);
+		wb.write(fos);
+		wb.close();	
+		
+		inDesktop(){
+		
+					//String converter = ('H://Markets//NOP Reconciliation//NOP Automation NANO//Convertor_xlsx.xlsm');
+					String converter = (NOP_CONFIGS.getWrappedObject().get("part3_logic").toString());
+					sendKeys('#r')
+					sendKeys(converter);
+					sleep(2000);
+					pressEnter();
+					
+					sleep(2000);
+					
+					sleep(1500)
+					/* sendKeys("^g");
+					sleep(1000);
+					sendKeys("F6");
+					pressEnter();
+					sleep(1000)
+					setClipboardText(comparison_Filepath); 
+					pressCtrlV();
+					
+					sleep(1500)
+					sendKeys("^g");
+					sleep(1000);
+					sendKeys("F7");
+					pressEnter();
+					sleep(1000)
+					setClipboardText(MR_ON_EOD_FX_Deals_Outstanding); 
+					pressCtrlV();
+					
+					sleep(1500)
+					sendKeys("^g");
+					sleep(1000);
+					sendKeys("F8");
+					pressEnter();
+					sleep(1000)
+					setClipboardText(summary_Filepath); 
+					pressCtrlV();
+					
+					sleep(1500)
+					sendKeys("^g");
+					sleep(1000);
+					sendKeys("F9");
+					pressEnter();
+					sleep(1000)
+					setClipboardText(MR_ON_EOD_NOP_Daily_Trades_9pm_xxxxxx); 
+					pressCtrlV();
+					
+					sleep(1500)
+					sendKeys("^g");
+					sleep(1000);
+					sendKeys("F10");
+					pressEnter();
+					sleep(1000)
+					setClipboardText(OutstandingFrontOnshore); 
+					pressCtrlV();
+					
+					sleep(1500)
+					sendKeys("^g");
+					sleep(1000);
+					sendKeys("F11");
+					pressEnter();
+					sleep(1000)
+					setClipboardText(DMR); 
+					pressCtrlV();
+					
+					sleep(1500)
+					sendKeys("^g");
+					sleep(1000);
+					sendKeys("F12");
+					pressEnter();
+					sleep(1000)
+					setClipboardText(EOD_FC_Notes_xxxxxx); 
+					pressCtrlV();
+					
+					sleep(1500)
+					sendKeys("^g");
+					sleep(1000);
+					sendKeys("F13");
+					pressEnter();
+					sleep(1000)
+					setClipboardText(MR_ON_EOD_NOP_Report_Daily_9pm_xxxxxx); 
+					pressCtrlV();
+					
+					sleep(1500)
+					sendKeys("^g");
+					sleep(1000);
+					sendKeys("F14");
+					pressEnter();
+					sleep(1000)
+					setClipboardText(bsysun08); 
+					pressCtrlV();
+					
+					sleep(1500)
+					sendKeys("^g");
+					sleep(1000);
+					sendKeys("F15");
+					pressEnter();
+					sleep(1000)
+					setClipboardText(arena_Filepath); 
+					pressCtrlV();
+					
+					sleep(1500)
+					sendKeys("^g");
+					sleep(1000);
+					sendKeys("F16");
+					pressEnter();
+					sleep(1500)
+					setClipboardText(OutstandingBrainsOnshore_Filepath); 
+					pressCtrlV();
+					
+					sleep(1500)
+					sendKeys("^g");
+					sleep(1500);
+					sendKeys("F17");
+					pressEnter();
+					sleep(1500)
+					setClipboardText(previous_working_day_ddMMyyy); 
+					pressCtrlV();
+					
+					pressEnter(); */
+					sendKeys("^q");
+					sleep(60000);
+					sendKeys("^s");
+					sendKeys('!{F4}')
+					//close();
+					}
+		
+		}
+	]]></script>
+	
+	</robot> 
+</robotics-flow> 
+	
+    <export include-original-data="true"></export>
+
+</config>
