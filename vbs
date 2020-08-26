@@ -1,23 +1,14 @@
-Set objShell = CreateObject("WScript.Shell")
-Dim cur
-cur = "C:\\Users\\Akshay\\Downloads\\NOP-backup-21.08.20-master\\NOP-backup-21.08.20-master\\NOP 21.08.20 BACKUP\\NOP 21.08.20 BACKUP\\NOP QuickFixes\\NOP Part 3.xlsm"
-WScript.Echo cur
+Dim objExcel, objWorkbook, filePath 
 
-ExcelMacroExample
+filePath = "C:\\Users\\Akshay\\Downloads\\NOP-backup-21.08.20-master\\NOP-backup-21.08.20-master\\NOP 21.08.20 BACKUP\\NOP 21.08.20 BACKUP\\NOP QuickFixes\\NOP Part 3.xlsm"
+Set objExcel = CreateObject("Excel.Application")
+Set objWorkbook = objExcel.Workbooks.Open(filePath)
+objExcel.Visible = True
+objExcel.Run "cleaning_NOP_Summary"
+objWorkbook.Save
+objExcel.Quit
 
-Sub ExcelMacroExample() 
+Set objWorkbook = Nothing
+Set objExcel = Nothing
 
-Dim xlApp 
-Dim xlBook 
-Dim xlsFile
-xlsFile = cur
-
-Set xlApp = CreateObject("Excel.Application") 
-Set xlBook = xlApp.Workbooks.Open(xlsFile) 
-xlApp.Run "cleaning_NOP_Summary"
-xlApp.Save
-xlApp.Quit 
-
-MsgBox("Successfully completed.",0,"Completed")
-
-End Sub 
+WScript.Quit
