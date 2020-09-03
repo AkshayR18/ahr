@@ -1,0 +1,16 @@
+for(int abc = 2 ; abc <= 30 ; abc++)
+			{							
+				Row currentRow4 = inputSheet4.getRow(abc);
+											
+				double filterCheckCell4 = currentRow4.getCell(3,Row.MissingCellPolicy.RETURN_BLANK_AS_NULL).getNumericCellValue();
+				if(filterCheckCell4 != 0.0){
+				log.info("filterCheckCell4: "+filterCheckCell4)
+				String value4 = "";						
+				Cell cellData4 = currentRow4.getCell(0,Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
+				currencyList.add(cellData4.toString());
+				currentRowIndex4++;
+				}
+				else{
+				continue;
+				}				
+			}
