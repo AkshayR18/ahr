@@ -1,0 +1,7 @@
+	import com.workfusion.studio.rpa.recorder.api.*
+	import com.workfusion.studio.rpa.recorder.api.types.*
+	import com.workfusion.studio.rpa.recorder.api.custom.*
+	import com.workfusion.studio.rpa.recorder.api.internal.representation.*
+	import com.workfusion.bot.exception.* 
+  
+  switchToExistingWindow(new WindowDescriptor("", "(?i).*\\Qfile_name\\E.*", false, true).toString(), 10000)
