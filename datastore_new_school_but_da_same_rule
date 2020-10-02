@@ -1,0 +1,17 @@
+<var-def name="bot_task_properties">
+	<datastore name="bot_configs">
+		<template>select * from @this</template>
+	</datastore>
+</var-def>
+
+<script><![CDATA[
+	def BOT_CONFIG = [:]
+	bot_task_properties.getWrappedObject().toList().each { property ->
+		BOT_CONFIG.put(property.get("key").toString(), property.get("value").toString())
+	}
+	sys.defineVariable("BOT_CONFIG", BOT_CONFIG)
+]]></script>	
+//cki la haut- laisse la haut en dehors robotics flow si ena ou script
+
+String file_path = (BOT_CONFIG.getWrappedObject().get("file_path").toString()); //lerla to appelle li cmsa
+//cki emba dans script
