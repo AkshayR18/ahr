@@ -1,0 +1,3 @@
+double par_avant = sheet.getRow(i).getCell(10,Row.MissingCellPolicy.RETURN_BLANK_AS_NULL).getNumericCellValue();
+double par = Math.round((sheet.getRow(i).getCell(10,Row.MissingCellPolicy.RETURN_BLANK_AS_NULL).getNumericCellValue())* 100.0) / 100.0;
+log.info("checking par_avant " +par_avant);
