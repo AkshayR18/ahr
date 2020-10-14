@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config
+	xmlns="http://web-harvest.sourceforge.net/schema/1.0/config"
+	scriptlang="groovy">
+
+	<script><![CDATA[
+		import java.time.LocalDate;
+		import java.time.DayOfWeek;
+		import java.time.format.DateTimeFormatter;
+		import java.io.File;
+		import java.io.FileInputStream;
+		import java.io.FileOutputStream;
+		import java.io.IOException;
+		import java.util.zip.*;				
+		import org.apache.commons.io.FileUtils;
+		import java.io.*;
+		import java.nio.file.*;
+		import org.apache.poi.ss.usermodel.*;
+		import org.apache.poi.ss.util.*;
+		import org.apache.poi.xssf.usermodel.*;
+		import java.time.*;
+		import java.util.*;
+		import org.apache.commons.io.comparator.LastModifiedFileComparator;	
+		import java.time.temporal.ChronoUnit;
+		import static java.nio.file.StandardCopyOption.*;		
+		import java.io.File;
+		import java.io.FileNotFoundException;  
+		import java.util.Scanner; 
+		
+		String txt_file_path = ("C:\\Users\\Akshay\\Desktop\\JudeBoulettes\\brains.txt");
+		String txt_file_path_1 = ("C:\\Users\\Akshay\\Desktop\\JudeBoulettes\\fx_tran_mu(new version).txt");
+		String txt_file_path_2 = ("C:\\Users\\Akshay\\Desktop\\JudeBoulettes\\fx_tran_mu.txt");
+		
+		
+		String line = Files.readAllLines(Paths.get(txt_file_path)).get(1);
+		log.info("line: "+line);
+		
+		String line_1 = Files.readAllLines(Paths.get(txt_file_path_1)).get(1);
+		log.info("line_1: "+line_1);
+		
+		String line_2 = Files.readAllLines(Paths.get(txt_file_path_2)).get(1);
+		log.info("line_2: "+line_2);
+		
+	]]></script>
+
+
+<export include-original-data="true" />
+	
+</config>
