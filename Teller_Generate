@@ -1,0 +1,402 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config xmlns="http://web-harvest.sourceforge.net/schema/1.0/config" scriptlang="groovy">
+
+
+<!--Access datastore -->
+	<var-def name="links">
+		<datastore name="Manuel_Teller_Config">
+			SELECT * FROM @this
+		</datastore>
+	</var-def> 
+	<!--Access datastore -->
+	
+<var-def name="bot_task_properties">
+	<datastore name="Manuel_Teller_Config">
+		<template>select * from @this</template>
+	</datastore>
+</var-def>
+
+<script><![CDATA[
+	def BOT_CONFIG = [:]
+	bot_task_properties.getWrappedObject().toList().each { property ->
+		BOT_CONFIG.put(property.get("names").toString(), property.get("informations").toString())
+	}
+	sys.defineVariable("BOT_CONFIG", BOT_CONFIG)
+]]></script>
+
+	<!--Use the Variable in the Secrets vault -->
+	<secrets-vault-get alias="Teller_Offshore_Supervisor" />
+	<!--Use the Variable in the Secrets vault -->
+
+<script><![CDATA[ 
+
+   		import java.util.Calendar;
+		import java.util.Formatter;
+		import java.text.SimpleDateFormat;
+		
+		
+		import java.nio.file.Files;
+		import java.nio.file.Path;
+		import java.nio.file.Paths;
+		
+		String log_path = (BOT_CONFIG.getWrappedObject().get("Log_File").toString());
+			
+		log.info(log_path)	
+			
+	
+			
+		try{
+			Files.createDirectories(Paths.get(log_path));
+		}catch(Exception e){
+			log.info("Error " + e)	
+		}
+		
+		sys.defineVariable("log_path", log_path);
+		
+		
+]]></script>
+
+<script><![CDATA[ 
+
+   		import java.util.Calendar;
+		import java.util.Formatter;
+		import java.text.SimpleDateFormat;
+		
+		
+		import java.nio.file.Files;
+		import java.nio.file.Path;
+		import java.nio.file.Paths;
+		
+		import java.time.Year;
+		
+		Calendar cal = Calendar.getInstance();
+
+		Formatter fmt4 = new Formatter();
+		fmt4 = new Formatter();
+		fmt4.format("%tm. %tB", cal,cal);
+      
+      
+      	def date = new Date()
+		def sdf = new SimpleDateFormat("dd.MM.yyyy")
+		log.info(sdf.format(date))	
+		
+		Year y = Year.now();  
+		
+		String Chrome_Download_path = (BOT_CONFIG.getWrappedObject().get("Custom_Chrome_Download_Path").toString());
+			
+		log.info(Chrome_Download_path)	
+			
+		String fs;
+		fs = String.format(Chrome_Download_path,y,fmt4, sdf.format(date));
+			
+		try{
+			Files.createDirectories(Paths.get(fs));
+		}catch(Exception e){
+			log.info("Error " + e)	
+		}
+		
+		sys.defineVariable("fs", Paths.get(fs));
+		
+		
+]]></script>
+
+
+		<!--User actions e.g open browser click etc -->
+		<robotics-flow>
+			<robot driver="universal" start-in-private="false" close-on-completion="true">
+			<capability name ="SEARCH_ALL_WINDOWS" value="true"/>
+			<capability name="CLOSE_ALL_WINDOWS" value="false"/>
+			<capability name="chromeOptions">
+			<script return="chromeArgs"><![CDATA[
+			
+				log.info("TestChrome" + fs.toString())	
+
+				import org.openqa.selenium.chrome.ChromeOptions;
+				String dl_path = "";
+				ChromeOptions options = new ChromeOptions();
+				Map<String,Object> prefs = new HashMap<String,Object>();
+				prefs.put("download.default_directory",fs.toString())	;
+				options.setExperimentalOption("prefs",prefs)
+				chromeArgs = options;
+			 ]]></script>
+
+		</capability>
+		<!--User actions e.g open browser click etc -->
+		
+		
+		
+		<script><![CDATA[
+			import java.text.SimpleDateFormat;
+			import java.io.FileWriter;   // Import the FileWriter class
+			import java.io.IOException;  // Import the IOException class to handle errors
+			import java.nio.file.Files;
+			import java.nio.file.Path;
+			import java.nio.file.Paths;
+		
+			
+			
+			Logger("----------------------------------------------------------------------");							
+			Logger("Start End_of_Day_Offshore_Part1");
+
+
+			def date = new Date()
+			def sdf = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss")
+
+			log.info(sdf.format(date) + " " + "End of Day Offshore: ");
+			
+			def String verifyLogIn;	
+						
+			//SECRETS VAULT
+			Map entryMap = secureEntryMap.getWrappedObject();
+			com.freedomoss.crowdcontrol.webharvest.web.dto.SecureEntryDTO obj = entryMap.get("Teller_Offshore_Supervisor");
+						
+			user = obj.getKey().toString();
+			pass = obj.getValue().toString();
+						
+			log.info(sdf.format(date) + " " +"Username: " + user );
+						
+				if(pass == "") {
+					pass = "1";
+						
+				}	
+				
+				
+				////DATASTORE
+				//DIRECTORY
+				String urlOffshore = (BOT_CONFIG.getWrappedObject().get("URL_OffShore").toString());
+		
+				
+				//Process Web
+				pageLoadTimeout(180000);
+				openChrome(urlOffshore)
+				Logger("urlOffshore: " + urlOffshore);
+				log.info(sdf.format(date) + " " + "url: " + urlOffshore);	
+				
+				//Login to the site
+				try{
+					
+					$(byXpath('//*[@id="username"]')).sendKeys(user);
+					$(byXpath('//*[@id="password"]')).sendKeys(pass);
+					$(byXpath('//*[@id="btnLogin"]')).click();
+				}catch(Exception e){
+					Logger("Website: " + "Error");
+				}
+				
+				
+				sleep(3000);
+				def String strRole;
+				try{
+				strRole = $(byXpath('//*[@id="labRole"]')).text
+				}catch(Exception e){
+					log.info(sdf.format(date) + " " + "Dropdown list Roles selections");	
+				}
+				
+				if  (strRole == "Role"){
+					$(byXpath('//*[@id="primaryRole"]')).sendKeys("Supervisor")
+					$(byXpath('//*[@id="btnLogin"]')).click();
+				}
+				
+				//Verify If already log in
+				try{
+				 verifyLogIn = $(byXpath('//*[@id="headingLoginError"]')).text 
+				}catch(Exception e){
+					Logger("verifyLogIn: " + "No Header");	
+					log.info(sdf.format(date) + " " + "verifyLogIn: " + "No Header");	
+				}
+				log.info("
+				if (!verifyLogIn){
+					
+					log.debug(sdf.format(date) + " " + "No Header");
+					
+			
+				}else{
+					Logger("verifyLogIn: " + verifyLogIn);
+					log.debug(sdf.format(date) + " " + "Header Present");
+					
+				}
+				
+				sleep(3000);
+				//Verify if popup warning appear
+   				def String verifyWarning;
+   				def String messageOfWarning;
+				try{
+				 verifyWarning = $(byXpath('//*[@id="hideBuissinessDate"]/div/div[1]/div[1]')).text
+				 messageOfWarning = $(byXpath('//*[@id="hideBuissinessDate"]/div/div[1]/div[2]')).text
+				}catch(Exception e){
+					log.info(sdf.format(date) + " " + "verifyWarning: " + "No Warning");	
+				}
+				log.info(sdf.format(date) + " " + "verifyWarning: " + verifyWarning);
+     				
+     			if (!verifyWarning){
+					log.info(sdf.format(date) + " " + "No Warning Message");
+
+				}else{
+					log.info("messageOfWarning : " + messageOfWarning);
+					//Click on Warning Message : OK
+					$(byAttribute('label','OK')).click();
+					
+			
+				}	
+				
+				sleep(2000);
+					
+				//Verify login role
+				try
+				{
+					def  String strRoleName;
+					strRoleName =  $(byText('Supervisor')).text();
+					
+					if  (strRoleName != "Supervisor")
+					{
+						Logger("Login Error Role : " + strRoleName + "Not equal to : " + "Supervisor");
+						log.info(sdf.format(date) + "Login Error Role : " + strRoleName + "Not equal to : " + "Supervisor");
+						//Log out
+						$(byTitle('Logout')).click();
+						//Confirm Log Out
+						$(byXpath('//*[@id="buttonlogoutDialogYes"]/span[2]')).click();
+						log.info(sdf.format(date) + "Login Error Role : " +"Logging Out End of Day Offshore");
+						return;
+					}	
+				}catch(Exception e)
+				{
+						Logger("Login Error Role : Not equal to : " + "Supervisor");
+						log.info(sdf.format(date) + "Login Error Role : Not equal to : " + "Supervisor");
+						//Log out
+						$(byTitle('Logout')).click();
+						//Confirm Log Out
+						$(byXpath('//*[@id="buttonlogoutDialogYes"]/span[2]')).click();
+						
+					
+				}
+				
+				
+				
+				
+				sleep(2000);
+				
+				
+			 	try{
+					def Period_Processing = $(withText('Reports'))	
+					Period_Processing.click();
+					Logger("Reports: " + "Click");
+					log.info(sdf.format(date) + " " + "Click on Reports");
+					}catch (Exception e) {
+						Logger("Reports: " + "Click Error");
+					}
+				
+				sleep(1000);
+				
+				try {
+					def linkElement1 = $(byPartialLinkText('Transaction'))
+					linkElement1.click();
+					Logger("Transaction: " + "Click");
+					log.info(sdf.format(date) + " " + "Click on Transaction");	
+				} catch (Exception e) {
+					Logger("Transaction: " + "Click Error");
+				}
+	
+				try {
+   						$(byXpath('//*[@id="reportTxnId"]/div/label')).click();
+   						sleep(2000);
+   						
+						def itemLists = $$(byXpath('//*[@id="reportTxnId"]/div/div[4]/div/ul/li'));
+						int iSize = itemLists.size()
+						
+	
+	
+						for(int i=0; i < iSize ; i++ ){
+							def sValue = itemLists.get(i).getText();
+							// Select the checkbox if the value of the checkbox is same what you are looking for
+							if (sValue.equalsIgnoreCase("Internal Clearing")) {
+								itemLists.get(i).click()
+								// This will take the execution out of for loop
+								break;
+							} 
+						}	 
+					} catch (Exception e) {
+
+					}	
+				sleep(1000);
+				try {
+					 $(byXpath('//*[@id="generate"]')).click();	
+					Logger("generate: " + "Click");
+				} catch (Exception e) {
+					Logger("generate: " + "Click Error");
+				}	
+				
+				sleep(1000);
+				try {
+					 $(byXpath('//*[@id="btnDownload"]')).click();	
+					Logger("btnDownload: " + "Click");
+				} catch (Exception e) {
+					Logger("btnDownload: " + "Click Error");
+				}								
+					
+				sleep(3000);
+				try {
+					 $(byXpath('//*[@id="dialogCancel"]/div/div[1]/a')).click();	
+					 Logger("dialogCancel: " + "Click");
+				} catch (Exception e) {
+					 Logger("dialogCancel: " + "Click Error");
+				}
+				
+				sleep(3000);
+				try {
+				
+				def Journal = $(withText('Journal'))	
+				Journal.click();
+				Logger("Journal: " + "Click");
+								
+				} catch (Exception e) {
+					Logger("Journal: " + "Click Error");
+				}
+				
+				sleep(5000);
+				try {
+					 $(byXpath('//*[@id="download"]')).click();	
+					Logger("download: " + "Click");
+				} catch (Exception e) {
+					Logger("download: " + "Click Error");
+				}
+				sleep(5000);
+				
+				Logger("Logging Out");
+				Logger("END End_of_Day_Offshore_Part1");
+				Logger("----------------------------------------------------------------------");							
+			
+				//Log out
+				$(byTitle('Logout')).click();
+				//Confirm Log Out
+				$(byXpath('//*[@id="buttonlogoutDialogYes"]/span[2]')).click();
+				log.info(sdf.format(date) + " " + "Logging Out Offshore");	
+
+
+def Logger(String strlog){
+try {
+	
+	def date = new Date();
+	def sdf = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
+	def sdfLog = new SimpleDateFormat("yyyy-MM-dd");
+
+
+			
+  FileWriter myWriter = new FileWriter(log_path.toString()+  "\\\\" + sdfLog.format(date) +"_Log_EOD.txt", true);
+  myWriter.append("\n" );
+  myWriter.write(sdf.format(date).toString() + " : " + strlog);
+  myWriter.close();
+} catch (IOException e) {
+  System.out.println("An error occurred.");
+  e.printStackTrace();
+}
+}
+
+		
+		]]></script>
+	
+		</robot>
+		</robotics-flow>
+	
+	
+    <export include-original-data="true"></export>
+
+</config>
