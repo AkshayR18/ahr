@@ -1,0 +1,7 @@
+try {
+        Runtime.getRuntime().exec(new String[] {
+        "wscript.exe", "C:\\path\\example.vbs"
+        });        
+    } catch (Exception ex) {
+        ex.printStackTrace();
+    }
