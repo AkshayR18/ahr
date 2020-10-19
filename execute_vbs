@@ -1,7 +1,13 @@
-try {
-        Runtime.getRuntime().exec(new String[] {
-        "wscript.exe", "C:\\path\\example.vbs"
-        });        
-    } catch (Exception ex) {
-        ex.printStackTrace();
-    }
+<?xml version="1.0" encoding="UTF-8"?>
+<config xmlns="http://web-harvest.sourceforge.net/schema/1.0/config" scriptlang="groovy">
+
+		<script><![CDATA[ 
+	
+	String xxx = "C:\\Robotics\\xxx.vbs";
+	
+	Runtime.getRuntime().exec("wscript.exe " +xxx);	
+
+		]]></script>
+	<export include-original-data="true"></export>
+
+</config>
