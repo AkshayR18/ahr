@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config xmlns="http://web-harvest.sourceforge.net/schema/1.0/config" scriptlang="groovy">
+
+<script><![CDATA[ 
+	import java.nio.file.Files;
+	import java.nio.file.Path;
+	import java.nio.file.Paths;
+	
+	String username = System.getProperty("user.name");
+	String download_path = ("C://Users//"+username+"//Desktop//PDF Report//");
+	log.info(download_path)	
+	Path path = Paths.get(download_path);
+	
+	if (!Files.exists(path)) {
+		Files.createDirectory(path);
+		log.info("Directory: "+path+" created");
+	} else { 
+		log.info("Directory: "+path+" already exists");
+	}
+	
+	sys.defineVariable("download_path", download_path);
+	
+]]></script>
+
+    <export include-original-data="true"></export>
+
+</config>
