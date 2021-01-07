@@ -1,0 +1,14 @@
+	String current_date_yyyy_mm_dd  = DateTimeFormatter.ofPattern("yyyy-MM-dd").format(date);
+	log.info("current_date_yyyy_mm_dd: "+current_date_yyyy_mm_dd);
+	
+	boolean today_public_holiday = false;
+	
+	if(holidays.toString().contains(current_date_yyyy_mm_dd)){
+		log.info("Today is a public holiday mf!");
+		today_public_holiday = true;
+	}else{
+		log.info("Today is NOT a public holiday mf!");
+		today_public_holiday = false;
+	}
+
+	log.info("today_public_holiday: "+today_public_holiday);
