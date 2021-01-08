@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config xmlns="http://web-harvest.sourceforge.net/schema/1.0/config" scriptlang="groovy">
+
+<var-def name="holidays">
+		<datastore name="holiday_list">
+			select * from @this
+		</datastore>
+	</var-def>
+
+	<script><![CDATA[
+		 list = []
+	]]></script>
+
+	<loop item="holi">
+		<list>
+			<script return="holidays" />
+		</list>
+		<body>			
+			<script><![CDATA[ 
+			println "first - ${holi.get(1)}"			
+			data = "${holi.get(1)}"			
+			list.add(data)
+			]]></script>
+			</body>
+	</loop>
+
+	<script><![CDATA[ 
+	println "Holiday List size - "+list.size()
+	
+	]]></script>
+		<script><![CDATA[
+	import java.io.FileOutputStream;
+	import java.io.FileReader;
+	import java.io.IOException;
+
+	import org.apache.commons.lang.math.NumberUtils;
+	import org.apache.poi.ss.usermodel.Row;
+	import org.apache.poi.ss.usermodel.Workbook;
+	import org.apache.poi.xssf.streaming.SXSSFSheet;
+	import org.apache.poi.xssf.streaming.SXSSFWorkbook;
+	import java.time.OffsetDateTime;
+	import java.time.ZoneOffset;
+	
+	import java.time.LocalDate;
+	import java.time.DayOfWeek;
+	import java.time.format.DateTimeFormatter;
+	import java.time.temporal.ChronoField;
+	import java.time.temporal.ChronoUnit;
+	
+    import com.google.gson.Gson;
+                
+
+	           
+		int holiday_month
+		int holiday_date
+		int holiday_year
+		
+          LocalDate date =  LocalDate.now();
+		  String current_date_yyyy_mm_dd  = DateTimeFormatter.ofPattern("yyyy-MM-dd").format(date);
+		  log.info("current_date_yyyy_mm_dd: "+current_date_yyyy_mm_dd);
+		  
+		  DayOfWeek dayOfWeek = DayOfWeek.of(date.get(ChronoField.DAY_OF_WEEK));
+		  println "dayOfWeek : "+dayOfWeek.name() 
+
+		  // for holidays
+			String localDate  = DateTimeFormatter.ofPattern("dd-MMM-yyyy").format(date);
+			String[] a = localDate.split("-");
+			System.out.println(a[0]);
+			System.out.println(a[1]);
+		     
+		     holiday_year = Integer.parseInt(a[2])
+		          
+		     List<LocalDate> holidays = new ArrayList();
+		     		     
+    		  for (Object actual_list : list) {
+					println "actual_list -- "+actual_list.toString()
+					
+					String[] s = actual_list.toString().split(",")
+					String date_s = s[1]
+					String month_s = s[2]
+					
+					holiday_date = Integer.parseInt(date_s.trim())
+					
+					if(month_s.trim().equalsIgnoreCase("Jan")){
+						month_s ="1"
+						holiday_month = Integer.parseInt(month_s)
+						holidays.add(LocalDate.of(holiday_year,holiday_month, holiday_date))
+					}
+					else if(month_s.trim().equalsIgnoreCase("Feb")){
+						month_s ="2"
+						holiday_month = Integer.parseInt(month_s)
+						holidays.add(LocalDate.of(holiday_year,holiday_month, holiday_date))
+					}
+					else if(month_s.trim().equalsIgnoreCase("Mar")){
+						month_s ="3"
+						holiday_month = Integer.parseInt(month_s)
+						holidays.add(LocalDate.of(holiday_year,holiday_month, holiday_date))
+					}
+					else if(month_s.trim().equalsIgnoreCase("Apr")){
+						month_s ="4"
+						holiday_month = Integer.parseInt(month_s)
+						holidays.add(LocalDate.of(holiday_year,holiday_month, holiday_date))
+					}
+					else if(month_s.trim().equalsIgnoreCase("May")){
+						month_s ="5"
+						holiday_month = Integer.parseInt(month_s)
+						holidays.add(LocalDate.of(holiday_year,holiday_month, holiday_date))
+					}
+					else if(month_s.trim().equalsIgnoreCase("Jun")){
+						month_s ="6"
+						holiday_month = Integer.parseInt(month_s)
+						holidays.add(LocalDate.of(holiday_year,holiday_month, holiday_date))
+					}
+					else if(month_s.trim().equalsIgnoreCase("Jul")){
+						month_s ="7"
+						holiday_month = Integer.parseInt(month_s)
+						holidays.add(LocalDate.of(holiday_year,holiday_month, holiday_date))
+					}
+					else if(month_s.trim().equalsIgnoreCase("Aug")){
+						month_s ="8"
+						holiday_month = Integer.parseInt(month_s)
+						holidays.add(LocalDate.of(holiday_year,holiday_month, holiday_date))
+					}
+					else if(month_s.trim().equalsIgnoreCase("Sep")){
+						month_s ="9"
+						holiday_month = Integer.parseInt(month_s)
+						holidays.add(LocalDate.of(holiday_year,holiday_month, holiday_date))
+					}
+					else if(month_s.trim().equalsIgnoreCase("Oct")){
+						month_s ="10"
+						holiday_month = Integer.parseInt(month_s)
+						holidays.add(LocalDate.of(holiday_year,holiday_month, holiday_date))
+					}
+					else if(month_s.trim().equalsIgnoreCase("Nov")){
+						month_s ="11"
+						holiday_month = Integer.parseInt(month_s)
+						holidays.add(LocalDate.of(holiday_year,holiday_month, holiday_date))
+					}
+					else if(month_s.trim().equalsIgnoreCase("Dec")){
+						month_s ="12"
+						holiday_month = Integer.parseInt(month_s)
+						holidays.add(LocalDate.of(holiday_year,holiday_month, holiday_date))
+					}
+					
+					
+				}
+    		log.debug("holidays list :"+holidays)
+	
+	boolean today_public_holiday = false;
+	
+	if(holidays.toString().contains(current_date_yyyy_mm_dd)){
+		log.info("Today is a public holiday mf!");
+		today_public_holiday = true;
+	}else{
+		log.info("Today is NOT a public holiday mf!");
+		today_public_holiday = false;
+	}
+
+	log.info("today_public_holiday: "+today_public_holiday);
+	 
+	sys.defineVariable("today_public_holiday", today_public_holiday)
+	
+		 ]]></script>
+		 
+
+<export include-original-data="true">
+<single-column name="today_public_holiday" value="${today_public_holiday}"></single-column>
+</export>
+</config>
