@@ -1,0 +1,1539 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config xmlns="http://web-harvest.sourceforge.net/schema/1.0/config" scriptlang="groovy">
+
+<var-def name="group">
+	<template>BARC</template>
+</var-def>
+
+<var-def name="config_file">	
+	<datastore name="config">
+		SELECT * FROM @this
+	</datastore>	
+</var-def>
+	
+<robotics-flow>
+<robot driver="universal" start-in-private="false">
+			<capability name ="SEARCH_ALL_WINDOWS" value="true"/>
+			<capability name="CLOSE_ALL_WINDOWS" value="false"/>
+			
+<secrets-vault-get alias="mcib_portal" />
+<secrets-vault-get alias="mcib_bom" />
+
+<script><![CDATA[
+		import org.apache.sis.internal.netcdf.Resources;
+        import java.io.FileOutputStream;
+		import java.io.FileReader;
+		import java.io.IOException;
+		import java.io.File;
+        import java.io.FileInputStream;
+        import java.io.FileNotFoundException;        
+        import java.util.ArrayList;
+        import java.util.Iterator;
+        import java.util.LinkedHashMap;
+        import java.util.List;
+        import java.util.Map;
+		import org.apache.commons.lang.math.NumberUtils;
+		import org.apache.log4j.Logger;
+		import org.apache.poi.ss.usermodel.Row;
+		import org.apache.poi.ss.usermodel.Workbook;
+		import org.apache.poi.xssf.streaming.SXSSFSheet;
+		import org.apache.poi.xssf.streaming.SXSSFWorkbook;
+		import java.time.OffsetDateTime;
+		import java.time.ZoneOffset;
+		import java.time.LocalDate;
+		import java.time.DayOfWeek;
+		import java.time.format.DateTimeFormatter;
+		import java.util.Date;
+		import java.util.Calendar;
+		import java.util.TimeZone;
+		import java.text.SimpleDateFormat;
+		import java.sql.Timestamp;
+		import java.time.temporal.ChronoField;
+		import java.time.temporal.ChronoUnit;
+		import org.apache.poi.hssf.usermodel.HSSFSheet;
+		import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+		import org.apache.poi.hssf.usermodel.HSSFChart.HSSFSeries;
+		import org.apache.poi.ss.SpreadsheetVersion;
+		import org.apache.poi.ss.usermodel.Cell;
+		import org.apache.poi.ss.usermodel.CellCopyPolicy;
+		import org.apache.poi.ss.usermodel.Sheet;
+		import org.apache.poi.ss.util.AreaReference;
+		import org.apache.poi.ss.util.CellRangeAddress;
+		import org.apache.poi.xssf.usermodel.XSSFSheet;
+		import org.apache.poi.xssf.usermodel.XSSFTable;
+		import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+		import org.apache.poi.xssf.usermodel.XSSFRow;
+        import org.apache.poi.xssf.usermodel.*;
+	    import com.google.gson.Gson;
+	    import com.workfusion.studio.rpa.recorder.api.*
+		import com.workfusion.studio.rpa.recorder.api.types.*
+		import com.workfusion.studio.rpa.recorder.api.custom.*
+		import com.workfusion.studio.rpa.recorder.api.internal.representation.*
+	    import java.io.BufferedWriter;
+		import java.io.File;
+		import java.io.FileOutputStream;
+		import java.io.OutputStreamWriter;
+		import java.io.Writer;
+		import java.nio.file.FileSystem;
+		import java.nio.file.FileSystems;
+		import java.nio.file.Files;
+		import java.nio.file.Path;
+		import java.nio.file.StandardCopyOption;
+	    import org.apache.commons.lang3.time.DateUtils;
+	    import com.google.gson.Gson;
+	    
+	    mcib_portal_url = (config_file.get(0).getAt("value").toString());
+	    mcib_bom_url = (config_file.get(1).getAt("value").toString());
+	    mcib_uat_portal_url = (config_file.get(2).getAt("value").toString());
+	    def imagePath = "C:\\Robotics\\MCIB_REPORTS_IMAGES";
+		
+	    log.info("mcib_portal_url: "+mcib_portal_url);
+	    log.info("mcib_bom_url: "+mcib_bom_url);
+	    log.info("mcib_uat_portal_url: "+mcib_uat_portal_url);
+	    
+		int currentYear = Calendar.getInstance().get(Calendar.YEAR);
+	    log.info("Current Year : "+currentYear);
+	    
+	    Date datos = new Date();
+	    Date nDate = DateUtils.addHours(datos, 4);
+		log.info("nDate : "+nDate)
+		  
+        SimpleDateFormat sdf = new SimpleDateFormat("ddMMMyyyy HH mm");
+        SimpleDateFormat sdf1 = new SimpleDateFormat("dd-MMM-yyyy");
+        SimpleDateFormat time = new SimpleDateFormat("HH:mm");
+        String dateString = sdf.format(nDate);
+        String localDate = sdf1.format(nDate);
+        String timos = time.format(nDate);
+         
+        log.info("Date (ddMMMyyyy) : "+dateString); 
+		log.info("Date (dd-MMM-yyyy) : "+localDate); 
+		log.info("Timestamp : "+timos)
+						
+		Map entryMap = secureEntryMap.getWrappedObject();
+	    com.freedomoss.crowdcontrol.webharvest.web.dto.SecureEntryDTO obj = entryMap.get("mcib_portal");
+	    portal_user = obj.getKey().toString();
+	    portal_pwd = obj.getValue().toString();
+		
+		Map entryMap2 = secureEntryMap.getWrappedObject();
+	    com.freedomoss.crowdcontrol.webharvest.web.dto.SecureEntryDTO obj2 = entryMap2.get("mcib_bom");
+	    user = obj2.getKey().toString();
+	    pass = obj2.getValue().toString();
+		
+	    previous_working =""
+	    LocalDate previous_working_day
+	           
+        LocalDate date =  LocalDate.now();
+		String localDt  = DateTimeFormatter.ofPattern("dd-MMM-yyyy").format(date);
+		log.info("Current Date===>"+localDt)
+		  
+		  DayOfWeek dayOfWeek = DayOfWeek.of(date.get(ChronoField.DAY_OF_WEEK));
+		  println "dayOfWeek : "+dayOfWeek.name() 
+		  today = dayOfWeek.name();
+		  log.info("today is ========>" +today)
+		  println("previous_working_day- "+get_previous_working_day(date));
+		  previous_working_day = get_previous_working_day(date)
+		  println "previous_working_day == "+previous_working_day
+		  
+		  println("second_previous_working_day- "+get_second_previous_working_day(date));
+		  second_previous_working_day = get_second_previous_working_day(date)
+		  println "second_previous_working_day == "+second_previous_working_day
+		  sunday_date = get_sunday_date(date)
+		  println "sunday_date == "+sunday_date
+		 	
+	  	public  LocalDate get_previous_working_day(LocalDate date) {
+		    DayOfWeek dayOfWeek = DayOfWeek.of(date.get(ChronoField.DAY_OF_WEEK));
+		    
+		    if (dayOfWeek == dayOfWeek.MONDAY) {
+		   return date.minus(2, ChronoUnit.DAYS);
+		 }
+		 else if(dayOfWeek == dayOfWeek.SUNDAY){
+		   return date.minus(1, ChronoUnit.DAYS);
+		 }
+		 else{
+		      return date.minus(1, ChronoUnit.DAYS);
+		 }
+		  }
+		 println"previous_working_day - final : "+previous_working_day		 
+		 sys.defineVariable("previous_working_day", previous_working_day)
+				
+		  public  LocalDate get_second_previous_working_day(LocalDate date) {
+		    DayOfWeek dayOfWeek = DayOfWeek.of(date.get(ChronoField.DAY_OF_WEEK));
+		    
+		    if (dayOfWeek == dayOfWeek.MONDAY) {
+		   return date.minus(3, ChronoUnit.DAYS);
+		 }
+		 else if(dayOfWeek == dayOfWeek.SUNDAY){
+		   return date.minus(2, ChronoUnit.DAYS);
+		 }
+		 else{
+		      return date.minus(2, ChronoUnit.DAYS);
+		 }
+		 }
+		 println"second_previous_working_day - final : "+second_previous_working_day		 
+		 sys.defineVariable("second_previous_working_day", second_previous_working_day)
+		
+		 //////get sunday date on monday//////
+		 public  LocalDate get_sunday_date(LocalDate date) {
+		    DayOfWeek dayOfWeek = DayOfWeek.of(date.get(ChronoField.DAY_OF_WEEK));
+		    
+		    if (dayOfWeek == dayOfWeek.MONDAY) {
+		   return date.minus(1, ChronoUnit.DAYS);
+		 	}
+		 	else if(dayOfWeek == dayOfWeek.TUESDAY){
+		   return date.minus(2, ChronoUnit.DAYS);
+		 }
+		 	else if(dayOfWeek == dayOfWeek.WEDNESDAY){
+		   return date.minus(3, ChronoUnit.DAYS);
+		 }
+		 else if(dayOfWeek == dayOfWeek.THURSDAY){
+		   return date.minus(4, ChronoUnit.DAYS);
+		 }
+		 else if(dayOfWeek == dayOfWeek.FRIDAY){
+		   return date.minus(5, ChronoUnit.DAYS);
+		 }
+		 }
+		 println"sunday_date - final : "+sunday_date		 
+		 sys.defineVariable("sunday_date", sunday_date)
+		 
+		 String local_date  = DateTimeFormatter.ofPattern("dd-MMM-yyyy").format(previous_working_day);
+		 String date_ddMMyy = DateTimeFormatter.ofPattern("ddMMyy").format(previous_working_day);
+		 String date_ddMMyy1 = DateTimeFormatter.ofPattern("dd.MM.yy").format(previous_working_day);
+		 String date_ddMMyyyy = DateTimeFormatter.ofPattern("ddMMyyyy").format(previous_working_day);
+		 String local_date1  = DateTimeFormatter.ofPattern("dd-MMM-yyyy").format(second_previous_working_day);
+		 String second_previous_yyyyMMdd = DateTimeFormatter.ofPattern("yyyy-MM-dd").format(second_previous_working_day);
+		 String second_previous_ddmmyyyy = DateTimeFormatter.ofPattern("ddMMyyyy").format(second_previous_working_day);
+		 String date_yyyyMMdd  = DateTimeFormatter.ofPattern("yyyy-MM-dd").format(previous_working_day);
+		 String sundayDate = DateTimeFormatter.ofPattern("yyyy-MM-dd").format(sunday_date);
+		 String sundayDate_ddMMyyyy = DateTimeFormatter.ofPattern("ddMMyyyy").format(sunday_date);
+	     String[] b = local_date.split("-");
+	    		 
+		  final_day = b[0]
+	      final_month = b[1]
+	      final_year = b[2]
+	     
+	     System.out.println("final_day==="+final_day);
+	     System.out.println("final_month==="+final_month);
+	     System.out.println("final_year==="+final_year);
+	     
+	     sys.defineVariable("final_day", final_day)
+	     sys.defineVariable("final_month", final_month)
+	     sys.defineVariable("final_year", final_year)
+	     
+	     // For the format 190820
+	     String local_date_yymmdd  = DateTimeFormatter.ofPattern("yyMMdd").format(previous_working_day);
+	     String local_date_ddmmyy  = DateTimeFormatter.ofPattern("ddMMyy").format(previous_working_day);
+	     String month_num = local_date_yymmdd.subSequence(2, 4);
+	     log.debug("month_num ==="+month_num)
+	     log.debug("local_date_yymmdd ==="+local_date_yymmdd)
+	     sys.defineVariable("local_date_yymmdd", local_date_yymmdd)
+	     sys.defineVariable("local_date_ddmmyy", local_date_ddmmyy)
+		 sys.defineVariable("month_num", month_num)
+		 println("date_ddmmyy=========="+date_ddMMyy);
+		 println("date_dd.mm.yy========"+date_ddMMyy1);
+		 println("date_ddmmyyyy========"+date_ddMMyyyy);
+		 println("date_yyyyMMdd========"+date_yyyyMMdd);
+		 println("second_previous_yyyyMMdd ----> " +second_previous_yyyyMMdd);
+		 println("second_previous_ddmmyyyy ----> " +second_previous_ddmmyyyy);
+		 
+		 println("second_previous_ddmmyyyy ----> " +second_previous_ddmmyyyy);
+		 
+		FileSystem fileSys = FileSystems.getDefault();
+		File logFile = new File("X://export archives//Log File "+dateString+".txt");
+        FileOutputStream is = new FileOutputStream(logFile);
+        OutputStreamWriter osw = new OutputStreamWriter(is);    
+        Writer w = new BufferedWriter(osw);
+        
+       if (today == "MONDAY"){
+					
+		inChrome(){
+		
+		open('http://mupbhemapp0005.corp.dsarena.com:8090/mcib/'); //live
+		//open('http://muubhemapp0006.corp.dsarena.com:8090/mcib/') //uat
+		pageLoadTimeout(180000);
+		//sleep(300000)
+		try{
+		$(byXpath('//input[@name="username"]')).sendKeys(portal_user);
+		$(byXpath('//input[@name="password"]')).sendKeys(portal_pwd);
+		$(byXpath('//button[@class="btn btn-primary pull-right"]')).click(); //uat
+		sleep(1000);
+		}
+		catch(Exception e){
+		log.info("1st attempt")
+		sleep(1000);
+		}
+		      try{
+					sleep(4000);
+					$(byXpath('//input[@name="username"]')).sendKeys(portal_user);
+		            $(byXpath('//input[@name="password"]')).sendKeys(portal_pwd);
+					$(byXpath('//button[@class="btn btn-primary pull-right"]')).click(); //uat
+						}catch(Exception e){
+		                          log.info("2nd attempt")
+		                        }
+		try{
+		open('http://mupbhemapp0005.corp.dsarena.com:8090/mcib/?generatexml'); // live
+		//open('http://muubhemapp0006.corp.dsarena.com:8090/mcib/?generatexml') //uat
+		$(byXpath('//input[@name="from_date"]')).clear();
+		}
+		catch(Exception e){ 
+		log.info("Login Failed.")
+		 }
+		
+
+		$(byXpath('//input[@name="from_date"]')).text(date_yyyyMMdd);
+		sleep(5000);
+		$(byXpath('//button[@id="generateXmlBtn"]')).click();
+		sleep(5000);
+        $(byXpath('//input[@name="from_date"]')).clear();
+		$(byXpath('//input[@name="from_date"]')).text(second_previous_yyyyMMdd);
+		sleep(5000);
+		$(byXpath('//button[@id="generateXmlBtn"]')).click();
+		sleep(5000);
+        $(byXpath('//input[@name="from_date"]')).clear();
+		$(byXpath('//input[@name="from_date"]')).text(sundayDate);
+		sleep(5000);
+		$(byXpath('//button[@id="generateXmlBtn"]')).click();
+
+		}
+		}
+		
+		else { 
+		inChrome(){
+		open(mcib_portal_url);
+		//open(mcib_uat_portal_url);
+		//open('http://mupbhemapp0005.corp.dsarena.com:8090/mcib/'); //live
+		//open('http://muubhemapp0006.corp.dsarena.com:8090/mcib/') //uat
+		pageLoadTimeout(180000);
+		//sleep(300000)
+		try{
+		$(byXpath('//input[@name="username"]')).sendKeys(portal_user);
+		$(byXpath('//input[@name="password"]')).sendKeys(portal_pwd);
+		$(byXpath('//button[@class="btn btn-primary pull-right"]')).click();
+		sleep(1000);
+		}
+		catch(Exception e){
+		log.info("1st attempt.")
+		sleep(1000);
+		}
+		      try{
+					sleep(4000);
+					$(byXpath('//input[@name="username"]')).sendKeys(portal_user);
+		            $(byXpath('//input[@name="password"]')).sendKeys(portal_pwd);
+					$(byXpath('//button[@class="btn btn-primary pull-right"]')).click();
+						}catch(Exception e){
+		                          log.info("2nd attempt.")
+		                        }	
+		
+		try{
+		open('http://mupbhemapp0005.corp.dsarena.com:8090/mcib/?generatexml'); //live
+		//open('http://muubhemapp0006.corp.dsarena.com:8090/mcib/?generatexml') //uat
+		$(byXpath('//input[@name="from_date"]')).clear();
+		}
+		catch(Exception e){
+		log.info("Login Failed.")
+		}
+		$(byXpath('//input[@name="from_date"]')).text(date_yyyyMMdd);
+		sleep(5000);	
+		$(byXpath('//button[@id="generateXmlBtn"]')).click();
+        } 
+		}
+       //////////CHECK IF XML FILE EXISTS/////////
+       //LIVE
+       String filePath1 = ("X:\\export\\BARC"+date_ddMMyyyy+".XML") 
+	   String filePath2 = ("X:\\export\\BARC"+date_ddMMyyyy+"_1.XML")
+	   String filePath3 = ("X:\\export\\BARC"+date_ddMMyyyy+"_2.XML")
+	   String filePath4 = ("X:\\export\\BARC"+date_ddMMyyyy+"_3.XML")
+	   String filePath4_1 = ("X:\\export\\BARC"+date_ddMMyyyy+"_4.XML") //added 15.06.2020
+	   String filePath4_2 = ("X:\\export\\BARC"+date_ddMMyyyy+"_5.XML") //added 15.06.2020
+	   String filePath4_3 = ("X:\\export\\BARC"+date_ddMMyyyy+"_6.XML") //added 15.06.2020
+
+	   String filePath5 = ("X:\\export\\BARC"+second_previous_ddmmyyyy+".XML")
+	   String filePath6 = ("X:\\export\\BARC"+second_previous_ddmmyyyy+"_1.XML") 	
+	   String filePath7 = ("X:\\export\\BARC"+second_previous_ddmmyyyy+"_2.XML")
+	   String filePath8 = ("X:\\export\\BARC"+second_previous_ddmmyyyy+"_3.XML") 
+	   String filePath8_1 = ("X:\\export\\BARC"+second_previous_ddmmyyyy+"_4.XML") //added 15.06.2020
+	   String filePath8_2 = ("X:\\export\\BARC"+second_previous_ddmmyyyy+"_5.XML") //added 15.06.2020
+	   String filePath8_3 = ("X:\\export\\BARC"+second_previous_ddmmyyyy+"_6.XML") //added 15.06.2020
+	   
+	   String filePath9 = ("X:\\export\\BARC"+sundayDate_ddMMyyyy+".XML")
+	   String filePath10 = ("X:\\export\\BARC"+sundayDate_ddMMyyyy+"_1.XML")
+	   String filePath11 = ("X:\\export\\BARC"+sundayDate_ddMMyyyy+"_2.XML")
+	   String filePath12 = ("X:\\export\\BARC"+sundayDate_ddMMyyyy+"_3.XML")
+	   String filePath12_1 = ("X:\\export\\BARC"+sundayDate_ddMMyyyy+"_4.XML") //added 15.06.2020
+	   String filePath12_2 = ("X:\\export\\BARC"+sundayDate_ddMMyyyy+"_5.XML") //added 15.06.2020
+	   String filePath12_3 = ("X:\\export\\BARC"+sundayDate_ddMMyyyy+"_6.XML") //added 15.06.2020
+	   
+	   //UAT
+/* 	   String filePath1 = ("//22.72.43.227/files/export/BARC"+date_ddMMyyyy+"_1.XML") 
+	   String filePath2 = ("//22.72.43.227/files/export/BARC"+date_ddMMyyyy+"_2.XML")
+	   String filePath3 = ("//22.72.43.227/files/export/BARC"+date_ddMMyyyy+"_3.XML")
+	   String filePath4 = ("//22.72.43.227/files/export/BARC"+date_ddMMyyyy+"_4.XML") 	
+	   
+	   String filePath5 = ("//22.72.43.227/files/export/BARC"+second_previous_ddmmyyyy+".XML")
+	   String filePath6 = ("//22.72.43.227/files/export/BARC"+second_previous_ddmmyyyy+"_1.XML") 	
+	   String filePath7 = ("//22.72.43.227/files/export/BARC"+second_previous_ddmmyyyy+"_2.XML")
+	   String filePath8 = ("//22.72.43.227/files/export/BARC"+second_previous_ddmmyyyy+"_3.XML")
+	   
+	   String filePath9 = ("//22.72.43.227/files/export/BARC"+sundayDate_ddMMyyyy+".XML")
+	   String filePath10 = ("//22.72.43.227/files/export/BARC"+sundayDate_ddMMyyyy+"_1.XML")
+	   String filePath11 = ("//22.72.43.227/files/export/BARC"+sundayDate_ddMMyyyy+"_2.XML")
+	   String filePath12 = ("//22.72.43.227/files/export/BARC"+sundayDate_ddMMyyyy+"_3.XML") */
+	   
+		File f1 = new File(filePath1);
+		File f2 = new File(filePath2);
+		File f3 = new File(filePath3);
+		File f4 = new File(filePath4);
+		File f4_1 = new File(filePath4_1); //added 15.06.2020
+		File f4_2 = new File(filePath4_2); //added 15.06.2020
+		File f4_3 = new File(filePath4_3); //added 15.06.2020
+		
+		File f5 = new File(filePath5);
+		File f6 = new File(filePath6);
+		File f7 = new File(filePath7);
+		File f8 = new File(filePath8);
+		File f8_1 = new File(filePath8_1); //added 15.06.2020
+		File f8_2 = new File(filePath8_2); //added 15.06.2020
+		File f8_3 = new File(filePath8_3); //added 15.06.2020
+				
+		File f9 = new File(filePath9);
+		File f10 = new File(filePath10);
+		File f11 = new File(filePath11);
+		File f12 = new File(filePath12);
+		File f12_1 = new File(filePath12_1); //added 15.06.2020
+		File f12_2 = new File(filePath12_2); //added 15.06.2020
+		File f12_3 = new File(filePath12_3); //added 15.06.2020
+		
+	if(f1.exists()){
+		try{
+        	w.write("BARC"+date_ddMMyyyy+".XML was generated on "+localDate+" at "+timos);
+			w.newLine();
+			}
+			catch(Exception e){
+			log.info("File does not exist!")
+			}
+       	}
+       
+    if(f2.exists()){
+    	try{
+        	w.write("BARC"+date_ddMMyyyy+"_1.XML was generated on "+localDate+" at "+timos);
+			w.newLine();
+			}
+			catch(Exception e){
+			log.info("File does not exist!");
+			}
+       }
+       
+    if(f3.exists()){
+  	  	try{
+        	w.write("BARC"+date_ddMMyyyy+"_2.XML was generated on "+localDate+" at "+timos);
+			w.newLine();
+			}
+			catch(Exception e){
+			log.info("File does not exist!")
+			}
+       }
+    
+    if(f4.exists()){
+    	try{
+        	w.write("BARC"+date_ddMMyyyy+"_3.XML was generated on "+localDate+" at "+timos);
+			w.newLine();
+			}
+			catch(Exception e){
+			log.info("File does not exist!")
+			}
+       }
+    ///15.06.2020///
+	if(f4_1.exists()){
+    	try{
+        	w.write("BARC"+date_ddMMyyyy+"_4.XML was generated on "+localDate+" at "+timos);
+			w.newLine();
+			}
+			catch(Exception e){
+			log.info("File does not exist!")
+			}
+       }
+	   
+	if(f4_2.exists()){
+    	try{
+        	w.write("BARC"+date_ddMMyyyy+"_5.XML was generated on "+localDate+" at "+timos);
+			w.newLine();
+			}
+			catch(Exception e){
+			log.info("File does not exist!")
+			}
+       }
+
+	if(f4_3.exists()){
+    	try{
+        	w.write("BARC"+date_ddMMyyyy+"_6.XML was generated on "+localDate+" at "+timos);
+			w.newLine();
+			}
+			catch(Exception e){
+			log.info("File does not exist!")
+			}
+       }	
+	////////////////
+	
+    if(f5.exists() && today == "MONDAY"){
+    	try{
+        	w.write("BARC"+second_previous_ddmmyyyy+".XML was generated on "+localDate+" at "+timos);
+			w.newLine();
+			}
+			catch(Exception e){
+			log.info("File does not exist!")
+			}
+       }               
+    
+    if(f6.exists() && today == "MONDAY"){
+    	try{
+        	w.write("BARC"+second_previous_ddmmyyyy+"_1.XML was generated on "+localDate+" at "+timos);
+			w.newLine();
+			}
+			catch(Exception e){
+			log.info("File does not exist!")
+			}
+       }    
+    
+    if(f7.exists() && today == "MONDAY"){
+    	try{
+        	w.write("BARC"+second_previous_ddmmyyyy+"_2.XML was generated on "+localDate+" at "+timos);
+			w.newLine();
+			}
+			catch(Exception e){
+			log.info("File does not exist!")
+			}
+       } 
+    
+    if(f8.exists() && today == "MONDAY"){
+    	try{
+        	w.write("BARC"+second_previous_ddmmyyyy+"_3.XML was generated on "+localDate+" at "+timos);
+			w.newLine();
+			}
+			catch(Exception e){
+			log.info("File does not exist!")
+			}
+       }
+	///15.06.2020///
+	if(f8_1.exists() && today == "MONDAY"){
+    	try{
+        	w.write("BARC"+second_previous_ddmmyyyy+"_4.XML was generated on "+localDate+" at "+timos);
+			w.newLine();
+			}
+			catch(Exception e){
+			log.info("File does not exist!")
+			}
+       }               
+    
+	if(f8_2.exists() && today == "MONDAY"){
+    	try{
+        	w.write("BARC"+second_previous_ddmmyyyy+"_5.XML was generated on "+localDate+" at "+timos);
+			w.newLine();
+			}
+			catch(Exception e){
+			log.info("File does not exist!")
+			}
+       }               
+    
+	if(f8_3.exists() && today == "MONDAY"){
+    	try{
+        	w.write("BARC"+second_previous_ddmmyyyy+"_6.XML was generated on "+localDate+" at "+timos);
+			w.newLine();
+			}
+			catch(Exception e){
+			log.info("File does not exist!")
+			}
+       }               
+    
+	////////////////
+   
+   if(f9.exists() && today == "MONDAY"){
+    	try{
+        	w.write("BARC"+sundayDate_ddMMyyyy+".XML was generated on "+localDate+" at "+timos);
+			w.newLine();
+			}
+			catch(Exception e){
+			log.info("File does not exist!")
+			}
+       }               
+    
+    if(f10.exists() && today == "MONDAY"){
+    	try{
+        	w.write("BARC"+sundayDate_ddMMyyyy+"_1.XML was generated on "+localDate+" at "+timos);
+			w.newLine();
+			}
+			catch(Exception e){
+			log.info("File does not exist!")
+			}
+       }    
+    
+    if(f11.exists() && today == "MONDAY"){
+    	try{
+        	w.write("BARC"+sundayDate_ddMMyyyy+"_2.XML was generated on "+localDate+" at "+timos);
+			w.newLine();
+			}
+			catch(Exception e){
+			log.info("File does not exist!")
+			}
+       } 
+    
+    if(f12.exists() && today == "MONDAY"){
+    	try{
+        	w.write("BARC"+sundayDate_ddMMyyyy+"_3.XML was generated on "+localDate+" at "+timos);
+			w.newLine();
+			}
+			catch(Exception e){
+			log.info("File does not exist!")
+			}
+       }
+    ///15.06.2020///
+	if(f12_1.exists() && today == "MONDAY"){
+    	try{
+        	w.write("BARC"+sundayDate_ddMMyyyy+"_4.XML was generated on "+localDate+" at "+timos);
+			w.newLine();
+			}
+			catch(Exception e){
+			log.info("File does not exist!")
+			}
+       }
+	
+	if(f12_2.exists() && today == "MONDAY"){
+    	try{
+        	w.write("BARC"+sundayDate_ddMMyyyy+"_5.XML was generated on "+localDate+" at "+timos);
+			w.newLine();
+			}
+			catch(Exception e){
+			log.info("File does not exist!")
+			}
+       }
+	
+	if(f12_3.exists() && today == "MONDAY"){
+    	try{
+        	w.write("BARC"+sundayDate_ddMMyyyy+"_6.XML was generated on "+localDate+" at "+timos);
+			w.newLine();
+			}
+			catch(Exception e){
+			log.info("File does not exist!")
+			}
+       }
+	////////////////
+       
+	   
+       ////////BOM JAVA APPLET/////////// 
+
+	//def imagePath = "C:\\Robotics\\MCIB_REPORTS_IMAGES";
+	
+	//def imagePath = "C:\\Users\\ABUI003\\Desktop\\MCIB_REPORTS_IMAGES" //Ushabye
+	
+	//openIE('http://10.103.2.128:7778/forms/frmservlet?config=bom');
+		openIE(mcib_bom_url);
+		switchToExistingWindow(new WindowDescriptor("", "(?i).*\\QInternet Explorer\\E.*", false, true).toString(), 5000); //wait for 5s
+		
+		/* sendKeys('#r');
+		sendKeys('iexplore');
+		pressEnter();
+		switchToExistingWindow(new WindowDescriptor("", "(?i).*\\QInternet Explorer\\E.*", false, true).toString(), 5000); //wait for 5s
+		sendKeys('{F4}');
+		sendKeys('http://10.103.2.128:7778/forms/frmservlet?config=bom');
+		pressEnter(); */
+		
+			boolean java_form_presence_bool = false;
+			//presence of java applet
+			while(java_form_presence_bool == false){
+	
+				try{
+					switchToExistingWindow(new WindowDescriptor("", "(?i).*\\QOracle Developer\\E.*", false, true).toString(), 5000); //wait for 5s
+					sendKeys("#{UP}");
+					$(byImage("${imagePath}/form1.png")).getCoordinates();
+					java_form_presence_bool = true;
+				}catch(Exception e){
+					java_form_presence_bool = false;
+					log.info("Dialog Found!");
+				}
+				//java update dialog
+				//${imagePath}/run_this_time.png -->put all in same path
+				sleep(2000);
+				boolean java_update_check_bool = false;
+				try{
+					$(byImage("${imagePath}/run_this_time.png")).getCoordinates();
+					java_update_check_bool = true;				
+				}catch(Exception e){
+					java_update_check_bool = false;
+				}
+				if(java_update_check_bool == true){
+					$(byImage("${imagePath}/run_this_time.png")).click();
+					log.info("Java Update passed");			
+				}
+				
+					//java security dialog 0
+				boolean java_security_check_bool_0 = false;
+				try{
+					$(byImage("${imagePath}/run2.png")).getCoordinates();
+					java_security_check_bool_0 = true;
+				}catch(Exception e){
+					java_security_check_bool_0 = false;			
+				}
+				
+				if(java_security_check_bool_0 == true){	
+					$(byImage("${imagePath}/run.png")).click();
+					log.info("Java Security 1(Run) passed");	
+				}
+
+				
+				
+				//java security dialog 1
+				boolean java_update_check_bool_1 = false;
+				try{
+					$(byImage("${imagePath}/run2.png")).getCoordinates();
+					java_update_check_bool_1 = true;				
+				}catch(Exception e){
+					java_update_check_bool_1 = false;
+				}
+				if(java_update_check_bool_1 == true){
+					$(byImage("${imagePath}/run2.png")).click();
+					log.info("Java Security 2(Run) passed");			
+				}
+
+				
+				//java security dialog 2
+				boolean java_security_check_bool_2 = false;
+				try{
+					$(byImage("${imagePath}/run_checkbox.png")).getCoordinates();
+					$(byImage("${imagePath}/run.png")).getCoordinates();
+					java_security_check_bool_2 = true;
+				}catch(Exception e){
+					java_security_check_bool_2 = false;			
+				}
+				
+				if(java_security_check_bool_2 == true){
+					$(byImage("${imagePath}/run_checkbox.png")).click();	
+					$(byImage("${imagePath}/run.png")).click();
+					log.info("Java Security 3(Run) passed");	
+				}
+				
+		
+				//java security dialog 3
+				boolean java_security_check_bool_3 = false;
+				try{
+					$(byImage("${imagePath}/continue.png")).getCoordinates();
+					java_security_check_bool_3 = true;
+				}catch(Exception e){
+					java_security_check_bool_3 = false;
+				}
+				if(java_security_check_bool_3 == true){
+						$(byImage("${imagePath}/continue.png")).click();
+						log.info("Java Security 4(Continue) passed");	
+				}
+				
+				
+				//java security dialog 4
+				boolean java_security_check_bool_4 = false;
+				try{
+					$(byImage("${imagePath}/unblock.png")).getCoordinates();
+					java_security_check_bool_4 = true;
+				}catch(Exception xamal){
+					java_security_check_bool_4  = false;
+				}
+				
+				if(java_security_check_bool_4 == true){	
+					$(byImage("${imagePath}/unblock.png")).click();
+					log.info("Java Security 5(Unblock) passed");		
+				}
+				
+				//java security dialog 5
+				boolean java_update_check_bool_5 = false;
+				try{
+					$(byImage("${imagePath}/java_yes.png")).getCoordinates();
+					java_update_check_bool_5 = true;				
+				}catch(Exception e){
+					java_update_check_bool_5 = false;
+				}
+				if(java_update_check_bool_5 == true){
+					$(byImage("${imagePath}/java_yes.png")).click();
+					log.info("Java Security 6(Yes) passed");			
+				} 
+		
+				//error dialog
+				boolean error_dialog_bool = false;
+				try{
+					$(byImage("${imagePath}/ok.png")).getCoordinates();
+					error_dialog_bool = true;
+				}catch(Exception e){
+					error_dialog_bool = false;
+				}
+				if(error_dialog_bool == true){
+					$(byImage("${imagePath}/ok.png")).click();
+					log.info("Error Dialog passed");
+				}
+			
+			}
+			
+		sleep(2000);
+		
+		
+		////////////////////////////////////LOGIN MCIB//////////////////////////////////
+		switchToExistingWindow(new WindowDescriptor("", "(?i).*\\QOracle Developer\\E.*", false, true).toString(), 5000); //wait for 5s
+		sendKeys(user);
+		sendKeys("{TAB}");
+		sendKeys(pass);
+		sendKeys("{TAB}");
+		sendKeys(group);
+		sendKeys("{TAB}");
+		pressEnter();	
+        
+        //////////////////////////////////////UPLOAD//////////////////////////////////////////
+       
+        sleep(2500)
+        sendKeys("{ALT}");
+        sendKeys("t");
+        sendKeys("u");
+        
+        sleep(2500)
+     
+        if(f1.exists()){
+        sendKeys("{TAB 2}");
+		boolean upload_found = false;
+			while(upload_found == false){
+				try{
+				$(byImage("${imagePath}/upload1.png")).click();
+				upload_found = true;
+				}catch(Exception e){
+					upload_found = false;
+				}
+			}
+        sleep(2000)
+		switchToExistingWindow(new WindowDescriptor("", "(?i).*\\QOpen\\E.*", false, true).toString(), 5000); //wait for 5s
+        sendKeys(filePath1)
+        sleep(5000);
+        pressEnter();
+        sleep(5000);
+        switchToExistingWindow(new WindowDescriptor("", "(?i).*\\QOracle Developer\\E.*", false, true).toString(), 5000); //wait for 5s
+        $(byImage("${imagePath}/uploadFile.png")).click(); //click on upload file
+        sleep(12000);
+        try{
+        $(byImage("${imagePath}/upload_successful.png")).getCoordinates();
+		pressEnter();
+		w.write("BARC"+date_ddMMyyyy+".XML [UPLOAD SUCCESSFUL] on "+localDate+" at "+timos);
+		w.newLine();
+        }
+        catch(Exception e){
+        pressEnter();
+        w.write("BARC"+date_ddMMyyyy+".XML [UPLOAD FAILED] on "+localDate+" at "+timos);
+		w.newLine();
+		log.info("File not found!")
+        }
+        } 
+
+        ////////////UPLOAD 2nd XML
+        if(f2.exists()){
+        sendKeys("{TAB 2}");
+		upload_found = false;
+			while(upload_found == false){
+				try{
+				$(byImage("${imagePath}/upload1.png")).click();
+				upload_found = true;
+				}catch(Exception e){
+					upload_found = false;
+				}
+			}
+        sleep(2000)
+		switchToExistingWindow(new WindowDescriptor("", "(?i).*\\QOpen\\E.*", false, true).toString(), 5000); //wait for 5s
+        sendKeys(filePath2)
+        sleep(5000);
+        pressEnter();
+        sleep(5000);
+        switchToExistingWindow(new WindowDescriptor("", "(?i).*\\QOracle Developer\\E.*", false, true).toString(), 5000); //wait for 5s
+        $(byImage("${imagePath}/uploadFile.png")).click(); //click on upload file
+        sleep(12000);
+        try{
+        $(byImage("${imagePath}/upload_successful.png")).getCoordinates();
+		pressEnter();
+		w.write("BARC"+date_ddMMyyyy+"_1.XML [UPLOAD SUCCESSFUL] on "+localDate+" at "+timos);
+		w.newLine();
+        }
+        catch(Exception e){
+        pressEnter();
+        w.write("BARC"+date_ddMMyyyy+"_1.XML [UPLOAD FAILED] on "+localDate+" at "+timos);
+		w.newLine();
+		log.info("File not found!")
+        }
+        }
+        ////////////UPLOAD 3rd XML
+        if(f3.exists()){
+        sendKeys("{TAB 2}");
+        upload_found = false;
+			while(upload_found == false){
+				try{
+				$(byImage("${imagePath}/upload1.png")).click();
+				upload_found = true;
+				}catch(Exception e){
+					upload_found = false;
+				}
+			}
+        sleep(2000)
+		switchToExistingWindow(new WindowDescriptor("", "(?i).*\\QOpen\\E.*", false, true).toString(), 5000); //wait for 5s
+        sendKeys(filePath3)
+        sleep(5000);
+        pressEnter();
+        sleep(5000);
+        switchToExistingWindow(new WindowDescriptor("", "(?i).*\\QOracle Developer\\E.*", false, true).toString(), 5000); //wait for 5s
+        $(byImage("${imagePath}/uploadFile.png")).click(); //click on upload file
+        sleep(12000);
+        try{
+        $(byImage("${imagePath}/upload_successful.png")).getCoordinates();
+		pressEnter();
+		w.write("BARC"+date_ddMMyyyy+"_2.XML [UPLOAD SUCCESSFUL] on "+localDate+" at "+timos);
+		w.newLine();
+        }
+        catch(Exception e){
+        pressEnter();
+        w.write("BARC"+date_ddMMyyyy+"_2.XML [UPLOAD FAILED] on "+localDate+" at "+timos);
+		w.newLine();
+		log.info("File not found!")
+        }
+        }
+        ////////////UPLOAD 4th XML
+        if(f4.exists()){
+        sendKeys("{TAB 2}");
+        upload_found = false;
+			while(upload_found == false){
+				try{
+				$(byImage("${imagePath}/upload1.png")).click();
+				upload_found = true;
+				}catch(Exception e){
+					upload_found = false;
+				}
+			}
+        sleep(2000)
+		switchToExistingWindow(new WindowDescriptor("", "(?i).*\\QOpen\\E.*", false, true).toString(), 5000); //wait for 5s
+        sendKeys(filePath4)
+        sleep(5000);
+        pressEnter();
+        sleep(5000);
+        switchToExistingWindow(new WindowDescriptor("", "(?i).*\\QOracle Developer\\E.*", false, true).toString(), 5000); //wait for 5s
+        $(byImage("${imagePath}/uploadFile.png")).click(); //click on upload file
+        sleep(12000);
+        try{
+        $(byImage("${imagePath}/upload_successful.png")).getCoordinates();
+		pressEnter();
+		w.write("BARC"+date_ddMMyyyy+"_3.XML [UPLOAD SUCCESSFUL] on "+localDate+" at "+timos);
+		w.newLine();
+        }
+        catch(Exception e){
+        pressEnter();
+        w.write("BARC"+date_ddMMyyyy+"_3.XML [UPLOAD FAILED] on "+localDate+" at "+timos);
+		w.newLine();
+		log.info("File not found!")
+        }
+        }
+		//15.06.2020
+		if(f4_1.exists()){
+		sendKeys("{TAB 2}");
+		upload_found = false;
+			while(upload_found == false){
+				try{
+				$(byImage("${imagePath}/upload1.png")).click();
+				upload_found = true;
+				}catch(Exception e){
+					upload_found = false;
+				}
+			}
+		sleep(2000)
+		switchToExistingWindow(new WindowDescriptor("", "(?i).*\\QOpen\\E.*", false, true).toString(), 5000); //wait for 5s
+		sendKeys(filePath4_1)
+		sleep(5000);
+		pressEnter();
+		sleep(5000);
+		switchToExistingWindow(new WindowDescriptor("", "(?i).*\\QOracle Developer\\E.*", false, true).toString(), 5000); //wait for 5s
+		$(byImage("${imagePath}/uploadFile.png")).click(); //click on upload file
+		sleep(12000);
+		try{
+		$(byImage("${imagePath}/upload_successful.png")).getCoordinates();
+		pressEnter();
+		w.write("BARC"+date_ddMMyyyy+"_4.XML [UPLOAD SUCCESSFUL] on "+localDate+" at "+timos);
+		w.newLine();
+		}
+		catch(Exception e){
+		pressEnter();
+		w.write("BARC"+date_ddMMyyyy+"_4.XML [UPLOAD FAILED] on "+localDate+" at "+timos);
+		w.newLine();
+		log.info("File not found!")
+		}
+		}
+
+		if(f4_2.exists()){
+		sendKeys("{TAB 2}");
+		upload_found = false;
+			while(upload_found == false){
+				try{
+				$(byImage("${imagePath}/upload1.png")).click();
+				upload_found = true;
+				}catch(Exception e){
+					upload_found = false;
+				}
+			}
+		sleep(2000)
+		switchToExistingWindow(new WindowDescriptor("", "(?i).*\\QOpen\\E.*", false, true).toString(), 5000); //wait for 5s
+		sendKeys(filePath4_2)
+		sleep(5000);
+		pressEnter();
+		sleep(5000);
+		switchToExistingWindow(new WindowDescriptor("", "(?i).*\\QOracle Developer\\E.*", false, true).toString(), 5000); //wait for 5s
+		$(byImage("${imagePath}/uploadFile.png")).click(); //click on upload file
+		sleep(12000);
+		try{
+		$(byImage("${imagePath}/upload_successful.png")).getCoordinates();
+		pressEnter();
+		w.write("BARC"+date_ddMMyyyy+"_5.XML [UPLOAD SUCCESSFUL] on "+localDate+" at "+timos);
+		w.newLine();
+		}
+		catch(Exception e){
+		pressEnter();
+		w.write("BARC"+date_ddMMyyyy+"_5.XML [UPLOAD FAILED] on "+localDate+" at "+timos);
+		w.newLine();
+		log.info("File not found!")
+		}
+		}
+		
+		if(f4_3.exists()){
+		sendKeys("{TAB 2}");
+		upload_found = false;
+			while(upload_found == false){
+				try{
+				$(byImage("${imagePath}/upload1.png")).click();
+				upload_found = true;
+				}catch(Exception e){
+					upload_found = false;
+				}
+			}
+		sleep(2000)
+		switchToExistingWindow(new WindowDescriptor("", "(?i).*\\QOpen\\E.*", false, true).toString(), 5000); //wait for 5s
+		sendKeys(filePath4_3)
+		sleep(5000);
+		pressEnter();
+		sleep(5000);
+		switchToExistingWindow(new WindowDescriptor("", "(?i).*\\QOracle Developer\\E.*", false, true).toString(), 5000); //wait for 5s
+		$(byImage("${imagePath}/uploadFile.png")).click(); //click on upload file
+		sleep(12000);
+		try{
+		$(byImage("${imagePath}/upload_successful.png")).getCoordinates();
+		pressEnter();
+		w.write("BARC"+date_ddMMyyyy+"_6.XML [UPLOAD SUCCESSFUL] on "+localDate+" at "+timos);
+		w.newLine();
+		}
+		catch(Exception e){
+		pressEnter();
+		w.write("BARC"+date_ddMMyyyy+"_6.XML [UPLOAD FAILED] on "+localDate+" at "+timos);
+		w.newLine();
+		log.info("File not found!")
+		}
+		}
+		
+
+        if(f5.exists() && today == "MONDAY"){ 
+        sendKeys("{TAB 2}");
+        upload_found = false;
+			while(upload_found == false){
+				try{
+				$(byImage("${imagePath}/upload1.png")).click();
+				upload_found = true;
+				}catch(Exception e){
+					upload_found = false;
+				}
+			}
+        sleep(2000)
+		switchToExistingWindow(new WindowDescriptor("", "(?i).*\\QOpen\\E.*", false, true).toString(), 5000); //wait for 5s
+        sendKeys(filePath5)
+        sleep(5000);
+        pressEnter();
+        sleep(5000);
+		switchToExistingWindow(new WindowDescriptor("", "(?i).*\\QOracle Developer\\E.*", false, true).toString(), 5000); //wait for 5s
+        $(byImage("${imagePath}/uploadFile.png")).click(); //click on upload file
+        sleep(12000)
+        try{
+        $(byImage("${imagePath}/upload_successful.png")).getCoordinates();
+        pressEnter();
+        w.write("BARC"+second_previous_ddmmyyyy+".XML [UPLOAD SUCCESSFUL] on "+localDate+" at "+timos);
+		w.newLine();
+        }
+        catch(Exception e){
+        pressEnter();
+        w.write("BARC"+second_previous_ddmmyyyy+".XML [UPLOAD FAILED] on "+localDate+" at "+timos);
+		w.newLine();
+        log.info("File not found!")
+        }
+        }
+        ////////////UPLOAD 2nd XML
+        if(f6.exists() && today == "MONDAY"){
+        sendKeys("{TAB 2}");
+        upload_found = false;
+			while(upload_found == false){
+				try{
+				$(byImage("${imagePath}/upload1.png")).click();
+				upload_found = true;
+				}catch(Exception e){
+					upload_found = false;
+				}
+			}
+        sleep(2000)
+		switchToExistingWindow(new WindowDescriptor("", "(?i).*\\QOpen\\E.*", false, true).toString(), 5000); //wait for 5s
+        sendKeys(filePath6)
+        sleep(5000);
+        pressEnter();
+        sleep(5000);
+		switchToExistingWindow(new WindowDescriptor("", "(?i).*\\QOracle Developer\\E.*", false, true).toString(), 5000); //wait for 5s
+        $(byImage("${imagePath}/uploadFile.png")).click(); //click on upload file
+        sleep(12000)
+        try{
+        $(byImage("${imagePath}/upload_successful.png")).getCoordinates();
+        pressEnter();
+        w.write("BARC"+second_previous_ddmmyyyy+"_1.XML [UPLOAD SUCCESSFUL] on "+localDate+" at "+timos);
+		w.newLine();
+        }
+        catch(Exception e){
+        pressEnter();
+        w.write("BARC"+second_previous_ddmmyyyy+"_1.XML [UPLOAD FAILED] on "+localDate+" at "+timos);
+		w.newLine();
+        log.info("File not found!")
+        }
+        }
+        ////////////UPLOAD 3rd XML
+        if(f7.exists() && today == "MONDAY"){
+        sendKeys("{TAB 2}");
+        upload_found = false;
+			while(upload_found == false){
+				try{
+				$(byImage("${imagePath}/upload1.png")).click();
+				upload_found = true;
+				}catch(Exception e){
+					upload_found = false;
+				}
+			}
+        sleep(2000)
+		switchToExistingWindow(new WindowDescriptor("", "(?i).*\\QOpen\\E.*", false, true).toString(), 5000); //wait for 5s
+        sendKeys(filePath7)
+        sleep(5000);
+        pressEnter();
+        sleep(5000);
+		switchToExistingWindow(new WindowDescriptor("", "(?i).*\\QOracle Developer\\E.*", false, true).toString(), 5000); //wait for 5s
+        $(byImage("${imagePath}/uploadFile.png")).click(); //click on upload file
+        sleep(12000)
+        try{
+        $(byImage("${imagePath}/upload_successful.png")).getCoordinates();
+        pressEnter();
+        w.write("BARC"+second_previous_ddmmyyyy+"_2.XML [UPLOAD SUCCESSFUL] on "+localDate+" at "+timos);
+		w.newLine();
+        }
+        catch(Exception e){
+        pressEnter();
+        w.write("BARC"+second_previous_ddmmyyyy+"_2.XML [UPLOAD FAILED] on "+localDate+" at "+timos);
+		w.newLine();
+        log.info("File not found!")
+        }
+        }
+        ////////////UPLOAD 4th XML
+        if(f8.exists() && today == "MONDAY"){
+        sendKeys("{TAB 2}");
+        upload_found = false;
+			while(upload_found == false){
+				try{
+				$(byImage("${imagePath}/upload1.png")).click();
+				upload_found = true;
+				}catch(Exception e){
+					upload_found = false;
+				}
+			}
+        sleep(2000)
+		switchToExistingWindow(new WindowDescriptor("", "(?i).*\\QOpen\\E.*", false, true).toString(), 5000); //wait for 5s
+        sendKeys(filePath8)
+        sleep(5000);
+        pressEnter();
+        sleep(5000);
+		switchToExistingWindow(new WindowDescriptor("", "(?i).*\\QOracle Developer\\E.*", false, true).toString(), 5000); //wait for 5s
+        $(byImage("${imagePath}/uploadFile.png")).click(); //click on upload file
+        sleep(12000)
+        try{
+        $(byImage("${imagePath}/upload_successful.png")).getCoordinates();
+        pressEnter();
+        w.write("BARC"+second_previous_ddmmyyyy+"_3.XML [UPLOAD SUCCESSFUL] on "+localDate+" at "+timos);
+		w.newLine();
+        }
+        catch(Exception e){
+        pressEnter();
+        w.write("BARC"+second_previous_ddmmyyyy+"_3.XML [UPLOAD FAILED] on "+localDate+" at "+timos);
+		w.newLine();
+        log.info("File not found!")
+        }
+        }
+		//15.06.2020
+        if(f8_1.exists() && today == "MONDAY"){
+        sendKeys("{TAB 2}");
+        upload_found = false;
+			while(upload_found == false){
+				try{
+				$(byImage("${imagePath}/upload1.png")).click();
+				upload_found = true;
+				}catch(Exception e){
+					upload_found = false;
+				}
+			}
+        sleep(2000)
+		switchToExistingWindow(new WindowDescriptor("", "(?i).*\\QOpen\\E.*", false, true).toString(), 5000); //wait for 5s
+        sendKeys(filePath8_1)
+        sleep(5000);
+        pressEnter();
+        sleep(5000);
+		switchToExistingWindow(new WindowDescriptor("", "(?i).*\\QOracle Developer\\E.*", false, true).toString(), 5000); //wait for 5s
+        $(byImage("${imagePath}/uploadFile.png")).click(); //click on upload file
+        sleep(12000)
+        try{
+        $(byImage("${imagePath}/upload_successful.png")).getCoordinates();
+        pressEnter();
+        w.write("BARC"+second_previous_ddmmyyyy+"_4.XML [UPLOAD SUCCESSFUL] on "+localDate+" at "+timos);
+		w.newLine();
+        }
+        catch(Exception e){
+        pressEnter();
+        w.write("BARC"+second_previous_ddmmyyyy+"_4.XML [UPLOAD FAILED] on "+localDate+" at "+timos);
+		w.newLine();
+        log.info("File not found!")
+        }
+        }
+        
+		if(f8_2.exists() && today == "MONDAY"){
+        sendKeys("{TAB 2}");
+        upload_found = false;
+			while(upload_found == false){
+				try{
+				$(byImage("${imagePath}/upload1.png")).click();
+				upload_found = true;
+				}catch(Exception e){
+					upload_found = false;
+				}
+			}
+        sleep(2000)
+		switchToExistingWindow(new WindowDescriptor("", "(?i).*\\QOpen\\E.*", false, true).toString(), 5000); //wait for 5s
+        sendKeys(filePath8_2)
+        sleep(5000);
+        pressEnter();
+        sleep(5000);
+		switchToExistingWindow(new WindowDescriptor("", "(?i).*\\QOracle Developer\\E.*", false, true).toString(), 5000); //wait for 5s
+        $(byImage("${imagePath}/uploadFile.png")).click(); //click on upload file
+        sleep(12000)
+        try{
+        $(byImage("${imagePath}/upload_successful.png")).getCoordinates();
+        pressEnter();
+        w.write("BARC"+second_previous_ddmmyyyy+"_5.XML [UPLOAD SUCCESSFUL] on "+localDate+" at "+timos);
+		w.newLine();
+        }
+        catch(Exception e){
+        pressEnter();
+        w.write("BARC"+second_previous_ddmmyyyy+"_5.XML [UPLOAD FAILED] on "+localDate+" at "+timos);
+		w.newLine();
+        log.info("File not found!")
+        }
+        }
+		
+		if(f8_3.exists() && today == "MONDAY"){
+        sendKeys("{TAB 2}");
+        upload_found = false;
+			while(upload_found == false){
+				try{
+				$(byImage("${imagePath}/upload1.png")).click();
+				upload_found = true;
+				}catch(Exception e){
+					upload_found = false;
+				}
+			}
+        sleep(2000)
+		switchToExistingWindow(new WindowDescriptor("", "(?i).*\\QOpen\\E.*", false, true).toString(), 5000); //wait for 5s
+        sendKeys(filePath8_3)
+        sleep(5000);
+        pressEnter();
+        sleep(5000);
+		switchToExistingWindow(new WindowDescriptor("", "(?i).*\\QOracle Developer\\E.*", false, true).toString(), 5000); //wait for 5s
+        $(byImage("${imagePath}/uploadFile.png")).click(); //click on upload file
+        sleep(12000)
+        try{
+        $(byImage("${imagePath}/upload_successful.png")).getCoordinates();
+        pressEnter();
+        w.write("BARC"+second_previous_ddmmyyyy+"_6.XML [UPLOAD SUCCESSFUL] on "+localDate+" at "+timos);
+		w.newLine();
+        }
+        catch(Exception e){
+        pressEnter();
+        w.write("BARC"+second_previous_ddmmyyyy+"_6.XML [UPLOAD FAILED] on "+localDate+" at "+timos);
+		w.newLine();
+        log.info("File not found!")
+        }
+        }
+		
+        if(f9.exists() && today == "MONDAY"){
+        sendKeys("{TAB 2}");
+        upload_found = false;
+			while(upload_found == false){
+				try{
+				$(byImage("${imagePath}/upload1.png")).click();
+				upload_found = true;
+				}catch(Exception e){
+					upload_found = false;
+				}
+			}
+        sleep(2000)
+		switchToExistingWindow(new WindowDescriptor("", "(?i).*\\QOpen\\E.*", false, true).toString(), 5000); //wait for 5s
+        sendKeys(filePath9)
+        sleep(5000);
+        pressEnter();
+        sleep(5000);
+        switchToExistingWindow(new WindowDescriptor("", "(?i).*\\QOracle Developer\\E.*", false, true).toString(), 5000); //wait for 5s
+        $(byImage("${imagePath}/uploadFile.png")).click(); //click on upload file
+        sleep(12000)
+        try{
+        $(byImage("${imagePath}/upload_successful.png")).getCoordinates();
+        pressEnter();
+        w.write("BARC"+sundayDate_ddMMyyyy+".XML [UPLOAD SUCCESSFUL] on "+localDate+" at "+timos);
+		w.newLine();
+        }
+        catch(Exception e){
+        pressEnter();
+        w.write("BARC"+sundayDate_ddMMyyyy+".XML [UPLOAD FAILDED] on "+localDate+" at "+timos);
+		w.newLine();
+        log.info("File not found!")
+        }
+        }
+        
+        if(f10.exists() && today == "MONDAY"){
+        sendKeys("{TAB 2}");
+        upload_found = false;
+			while(upload_found == false){
+				try{
+				$(byImage("${imagePath}/upload1.png")).click();
+				upload_found = true;
+				}catch(Exception e){
+					upload_found = false;
+				}
+			}
+        sleep(2000)
+		switchToExistingWindow(new WindowDescriptor("", "(?i).*\\QOpen\\E.*", false, true).toString(), 5000); //wait for 5s
+        sendKeys(filePath10)
+        sleep(5000);
+        pressEnter();
+        sleep(5000);
+        switchToExistingWindow(new WindowDescriptor("", "(?i).*\\QOracle Developer\\E.*", false, true).toString(), 5000); //wait for 5s
+        $(byImage("${imagePath}/uploadFile.png")).click(); //click on upload file
+        sleep(12000)
+        try{
+        $(byImage("${imagePath}/upload_successful.png")).getCoordinates();
+        pressEnter();
+        w.write("BARC"+sundayDate_ddMMyyyy+"_1.XML [UPLOAD SUCCESSFUL] on "+localDate+" at "+timos);
+		w.newLine();
+        }
+        catch(Exception e){
+        pressEnter();
+        w.write("BARC"+sundayDate_ddMMyyyy+"_1.XML [UPLOAD FAILDED] on "+localDate+" at "+timos);
+		w.newLine();
+        log.info("File not found!")
+        }
+        }
+        
+        if(f11.exists() && today == "MONDAY"){
+        sendKeys("{TAB 2}");
+        upload_found = false;
+			while(upload_found == false){
+				try{
+				$(byImage("${imagePath}/upload1.png")).click();
+				upload_found = true;
+				}catch(Exception e){
+					upload_found = false;
+				}
+			}
+        sleep(2000)
+		switchToExistingWindow(new WindowDescriptor("", "(?i).*\\QOpen\\E.*", false, true).toString(), 5000); //wait for 5s
+        sendKeys(filePath11)
+        sleep(5000);
+        pressEnter();
+        sleep(5000);
+        switchToExistingWindow(new WindowDescriptor("", "(?i).*\\QOracle Developer\\E.*", false, true).toString(), 5000); //wait for 5s
+        $(byImage("${imagePath}/uploadFile.png")).click(); //click on upload file
+        sleep(12000)
+        try{
+        $(byImage("${imagePath}/upload_successful.png")).getCoordinates();
+        pressEnter();
+        w.write("BARC"+sundayDate_ddMMyyyy+"_2.XML [UPLOAD SUCCESSFUL] on "+localDate+" at "+timos);
+		w.newLine();
+        }
+        catch(Exception e){
+        pressEnter();
+        w.write("BARC"+sundayDate_ddMMyyyy+"_2.XML [UPLOAD FAILDED] on "+localDate+" at "+timos);
+		w.newLine();
+        log.info("File not found!")
+        }
+        }
+        
+        if(f12.exists() && today == "MONDAY"){
+        sendKeys("{TAB 2}");
+        upload_found = false;
+			while(upload_found == false){
+				try{
+				$(byImage("${imagePath}/upload1.png")).click();
+				upload_found = true;
+				}catch(Exception e){
+					upload_found = false;
+				}
+			}
+        sleep(2000)
+		switchToExistingWindow(new WindowDescriptor("", "(?i).*\\QOpen\\E.*", false, true).toString(), 5000); //wait for 5s
+        sendKeys(filePath12)
+        sleep(5000);
+        pressEnter();
+        sleep(5000);
+        switchToExistingWindow(new WindowDescriptor("", "(?i).*\\QOracle Developer\\E.*", false, true).toString(), 5000); //wait for 5s
+        $(byImage("${imagePath}/uploadFile.png")).click(); //click on upload file
+        sleep(12000)
+        try{
+        $(byImage("${imagePath}/upload_successful.png")).getCoordinates();
+        pressEnter();
+        w.write("BARC"+sundayDate_ddMMyyyy+"_3.XML [UPLOAD SUCCESSFUL] on "+localDate+" at "+timos);
+		w.newLine();
+        }
+        catch(Exception e){
+        pressEnter();
+        w.write("BARC"+sundayDate_ddMMyyyy+"_3.XML [UPLOAD FAILDED] on "+localDate+" at "+timos);
+		w.newLine();
+        log.info("File not found!")
+        }
+        }
+		//15.06.2020
+		if(f12_1.exists() && today == "MONDAY"){
+        sendKeys("{TAB 2}");
+        upload_found = false;
+			while(upload_found == false){
+				try{
+				$(byImage("${imagePath}/upload1.png")).click();
+				upload_found = true;
+				}catch(Exception e){
+					upload_found = false;
+				}
+			}
+        sleep(2000)
+		switchToExistingWindow(new WindowDescriptor("", "(?i).*\\QOpen\\E.*", false, true).toString(), 5000); //wait for 5s
+        sendKeys(filePath12_1)
+        sleep(5000);
+        pressEnter();
+        sleep(5000);
+        switchToExistingWindow(new WindowDescriptor("", "(?i).*\\QOracle Developer\\E.*", false, true).toString(), 5000); //wait for 5s
+        $(byImage("${imagePath}/uploadFile.png")).click(); //click on upload file
+        sleep(12000)
+        try{
+        $(byImage("${imagePath}/upload_successful.png")).getCoordinates();
+        pressEnter();
+        w.write("BARC"+sundayDate_ddMMyyyy+"_4.XML [UPLOAD SUCCESSFUL] on "+localDate+" at "+timos);
+		w.newLine();
+        }
+        catch(Exception e){
+        pressEnter();
+        w.write("BARC"+sundayDate_ddMMyyyy+"_4.XML [UPLOAD FAILDED] on "+localDate+" at "+timos);
+		w.newLine();
+        log.info("File not found!")
+        }
+        }
+		
+		if(f12_2.exists() && today == "MONDAY"){
+        sendKeys("{TAB 2}");
+        upload_found = false;
+			while(upload_found == false){
+				try{
+				$(byImage("${imagePath}/upload1.png")).click();
+				upload_found = true;
+				}catch(Exception e){
+					upload_found = false;
+				}
+			}
+        sleep(2000)
+		switchToExistingWindow(new WindowDescriptor("", "(?i).*\\QOpen\\E.*", false, true).toString(), 5000); //wait for 5s
+        sendKeys(filePath12_2)
+        sleep(5000);
+        pressEnter();
+        sleep(5000);
+        switchToExistingWindow(new WindowDescriptor("", "(?i).*\\QOracle Developer\\E.*", false, true).toString(), 5000); //wait for 5s
+        $(byImage("${imagePath}/uploadFile.png")).click(); //click on upload file
+        sleep(12000)
+        try{
+        $(byImage("${imagePath}/upload_successful.png")).getCoordinates();
+        pressEnter();
+        w.write("BARC"+sundayDate_ddMMyyyy+"_5.XML [UPLOAD SUCCESSFUL] on "+localDate+" at "+timos);
+		w.newLine();
+        }
+        catch(Exception e){
+        pressEnter();
+        w.write("BARC"+sundayDate_ddMMyyyy+"_5.XML [UPLOAD FAILDED] on "+localDate+" at "+timos);
+		w.newLine();
+        log.info("File not found!")
+        }
+        }
+		
+		if(f12_3.exists() && today == "MONDAY"){
+        sendKeys("{TAB 2}");
+        upload_found = false;
+			while(upload_found == false){
+				try{
+				$(byImage("${imagePath}/upload1.png")).click();
+				upload_found = true;
+				}catch(Exception e){
+					upload_found = false;
+				}
+			}
+        sleep(2000)
+		switchToExistingWindow(new WindowDescriptor("", "(?i).*\\QOpen\\E.*", false, true).toString(), 5000); //wait for 5s
+        sendKeys(filePath12_3)
+        sleep(5000);
+        pressEnter();
+        sleep(5000);
+        switchToExistingWindow(new WindowDescriptor("", "(?i).*\\QOracle Developer\\E.*", false, true).toString(), 5000); //wait for 5s
+        $(byImage("${imagePath}/uploadFile.png")).click(); //click on upload file
+        sleep(12000)
+        try{
+        $(byImage("${imagePath}/upload_successful.png")).getCoordinates();
+        pressEnter();
+        w.write("BARC"+sundayDate_ddMMyyyy+"_6.XML [UPLOAD SUCCESSFUL] on "+localDate+" at "+timos);
+		w.newLine();
+        }
+        catch(Exception e){
+        pressEnter();
+        w.write("BARC"+sundayDate_ddMMyyyy+"_6.XML [UPLOAD FAILDED] on "+localDate+" at "+timos);
+		w.newLine();
+        log.info("File not found!")
+        }
+        }
+		////////////
+        
+        ///////////Exit/////////
+        sleep(1500)
+        sendKeys("{ALT}");
+        sendKeys("e");
+        sleep(1500)
+        sendKeys("{ALT}");
+        sendKeys("l")
+        $(byImage("${imagePath}/logout.png")).click();
+        sleep(1500)
+        pressEnter();
+      	
+      	w.close();
+]]></script>
+
+
+</robot>
+</robotics-flow>
+
+ <var-def name="tbl">	
+	<datastore name="ds_nop_update">
+		SELECT * FROM @this;
+		UPDATE @this SET previous_working_day = '${previous_working_day}' WHERE date = 'previous';
+		UPDATE @this SET previous_working_day = '${second_previous_working_day}' WHERE date = 'second_previous';
+		UPDATE @this SET previous_working_day = '${today}' WHERE date = 'today';
+	</datastore>	
+</var-def>
+
+
+    <export include-original-data="true">
+  	</export>
+
+</config>
