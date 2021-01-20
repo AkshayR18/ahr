@@ -1,0 +1,423 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config xmlns="http://web-harvest.sourceforge.net/schema/1.0/config" scriptlang="groovy">
+
+<var-def name="group">
+	<template>BARC</template>
+</var-def>
+
+<var-def name="config_file">	
+	<datastore name="config">
+		SELECT * FROM @this
+	</datastore>	
+</var-def>
+	
+<robotics-flow>
+<robot driver="universal" start-in-private="false">
+			<capability name ="SEARCH_ALL_WINDOWS" value="true"/>
+			<capability name="CLOSE_ALL_WINDOWS" value="false"/>
+			
+<secrets-vault-get alias="mcib_portal" />
+<secrets-vault-get alias="mcib_bom" />
+
+<script><![CDATA[
+		import org.apache.sis.internal.netcdf.Resources;
+        import java.io.FileOutputStream;
+		import java.io.FileReader;
+		import java.io.IOException;
+		import java.io.File;
+        import java.io.FileInputStream;
+        import java.io.FileNotFoundException;        
+        import java.util.ArrayList;
+        import java.util.Iterator;
+        import java.util.LinkedHashMap;
+        import java.util.List;
+        import java.util.Map;
+		import org.apache.commons.lang.math.NumberUtils;
+		import org.apache.log4j.Logger;
+		import org.apache.poi.ss.usermodel.Row;
+		import org.apache.poi.ss.usermodel.Workbook;
+		import org.apache.poi.xssf.streaming.SXSSFSheet;
+		import org.apache.poi.xssf.streaming.SXSSFWorkbook;
+		import java.time.OffsetDateTime;
+		import java.time.ZoneOffset;
+		import java.time.LocalDate;
+		import java.time.DayOfWeek;
+		import java.time.format.DateTimeFormatter;
+		import java.util.Date;
+		import java.util.Calendar;
+		import java.text.SimpleDateFormat;
+		import java.sql.Timestamp;
+		import java.time.temporal.ChronoField;
+		import java.time.temporal.ChronoUnit;
+		import org.apache.poi.hssf.usermodel.HSSFSheet;
+		import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+		import org.apache.poi.hssf.usermodel.HSSFChart.HSSFSeries;
+		import org.apache.poi.ss.SpreadsheetVersion;
+		import org.apache.poi.ss.usermodel.Cell;
+		import org.apache.poi.ss.usermodel.CellCopyPolicy;
+		import org.apache.poi.ss.usermodel.Sheet;
+		import org.apache.poi.ss.util.AreaReference;
+		import org.apache.poi.ss.util.CellRangeAddress;
+		import org.apache.poi.xssf.usermodel.XSSFSheet;
+		import org.apache.poi.xssf.usermodel.XSSFTable;
+		import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+		import org.apache.poi.xssf.usermodel.XSSFRow;
+        import org.apache.poi.xssf.usermodel.*;
+	    import com.google.gson.Gson;
+	    import com.workfusion.studio.rpa.recorder.api.*
+		import com.workfusion.studio.rpa.recorder.api.types.*
+		import com.workfusion.studio.rpa.recorder.api.custom.*
+		import com.workfusion.studio.rpa.recorder.api.internal.representation.*
+	    import java.io.BufferedWriter;
+		import java.io.File;
+		import java.io.FileOutputStream;
+		import java.io.OutputStreamWriter;
+		import java.io.Writer;
+		import java.nio.file.FileSystem;
+		import java.nio.file.FileSystems;
+		import java.nio.file.Files;
+		import java.nio.file.Path;
+		import java.nio.file.StandardCopyOption;
+	    import org.apache.commons.lang3.time.DateUtils;
+	    
+	    mcib_portal_url = (config_file.get(0).getAt("value").toString());
+	    mcib_bom_url = (config_file.get(1).getAt("value").toString());
+	    mcib_uat_portal_url = (config_file.get(2).getAt("value").toString());
+	    def imagePath = "C:\\Robotics\\MCIB_REPORTS_IMAGES";
+		
+		
+	    log.info("mcib_portal_url: "+mcib_portal_url);
+	    log.info("mcib_bom_url: "+mcib_bom_url);
+	    log.info("mcib_uat_portal_url: "+mcib_uat_portal_url);
+	    
+		 //def imagePath = "C:\\Robotics\\MCIB_REPORTS_IMAGES";
+	    
+	    int currentYear = Calendar.getInstance().get(Calendar.YEAR);
+	    log.info("Current Year : "+currentYear);
+	    
+	    Date nDate = new Date();
+	    Date datos = DateUtils.addHours(nDate, 4);
+		log.info("datos : "+datos)  
+        SimpleDateFormat sdf = new SimpleDateFormat("ddMMMyyyy HH mm");
+        SimpleDateFormat sdf1 = new SimpleDateFormat("ddMMyyyy");
+        SimpleDateFormat sdf2 = new SimpleDateFormat("dd-MMM-yyyy");
+        SimpleDateFormat time = new SimpleDateFormat("HH:mm");
+        String dateString = sdf.format(datos);
+        String localDatos = sdf1.format(datos); 
+        String localDatos1 = sdf2.format(datos);
+        String timos = time.format(datos);
+        log.info("Date (ddMMMyyyy) : "+dateString); 
+		log.info("Date (ddMMyyyy) : "+localDatos); 
+		log.info("Date (dd-MMM-yyyy) : "+localDatos1); 
+		log.info("Timestamp : "+timos)
+				
+		Map entryMap = secureEntryMap.getWrappedObject();
+	    com.freedomoss.crowdcontrol.webharvest.web.dto.SecureEntryDTO obj = entryMap.get("mcib_portal");
+	    portal_user = obj.getKey().toString();
+	    portal_pwd = obj.getValue().toString();
+		
+		Map entryMap2 = secureEntryMap.getWrappedObject();
+	    com.freedomoss.crowdcontrol.webharvest.web.dto.SecureEntryDTO obj2 = entryMap2.get("mcib_bom");
+	    user = obj2.getKey().toString();
+	    pass = obj2.getValue().toString();
+	    	
+         LocalDate date =  LocalDate.now();
+		 String localDt  = DateTimeFormatter.ofPattern("dd-MMM-yyyy").format(date);
+		 log.info("Current Date===>"+localDt)
+		 
+		  DayOfWeek dayOfWeek = DayOfWeek.of(date.get(ChronoField.DAY_OF_WEEK));
+		  println "dayOfWeek : "+dayOfWeek.name() 
+		  today = dayOfWeek.name();
+		  log.info("today is ========>" +today)
+
+		  String localDate  = DateTimeFormatter.ofPattern("yyyy-MM-dd").format(date);
+		  log.info("Current Date===>"+localDate)
+		  
+		FileSystem fileSys = FileSystems.getDefault();
+		File logFile = new File("X://export archives//Log File "+dateString+".txt");
+        FileOutputStream is = new FileOutputStream(logFile);
+        OutputStreamWriter osw = new OutputStreamWriter(is);    
+        Writer w = new BufferedWriter(osw);
+
+		inChrome(){
+		open(mcib_portal_url);
+		//open(mcib_uat_portal_url);
+		//open('http://mupbhemapp0005.corp.dsarena.com:8090/mcib/'); //live
+		//open('http://muubhemapp0006.corp.dsarena.com:8090/mcib/') //uat
+		pageLoadTimeout(180000);
+		//sleep(300000)
+		try{
+		$(byXpath('//input[@name="username"]')).sendKeys(portal_user);
+		$(byXpath('//input[@name="password"]')).sendKeys(portal_pwd);
+		$(byXpath('//button[@class="btn btn-primary pull-right"]')).click();
+		sleep(1000);
+		}
+		catch(Exception e){
+		log.info("1st attempt.")
+		sleep(1000);
+		}
+		      try{
+					sleep(4000);
+					$(byXpath('//input[@name="username"]')).sendKeys(portal_user);
+		            $(byXpath('//input[@name="password"]')).sendKeys(portal_pwd);
+					$(byXpath('//button[@class="btn btn-primary pull-right"]')).click();
+						}catch(Exception e){
+		                          log.info("2nd attempt.")
+		                        }			
+		try{
+		open('http://mupbhemapp0005.corp.dsarena.com:8090/mcib/?generatexml'); live
+		//open('http://muubhemapp0006.corp.dsarena.com:8090/mcib/?generatexml') //uat
+		$(byXpath('//input[@name="from_date"]')).clear();
+		}
+		catch(Exception e){
+		log.info("Login Failed.")
+		}
+
+		$(byXpath('//input[@name="from_date"]')).text(localDate);
+		sleep(5000);	
+		$(byXpath('//button[@id="generateXmlBtn"]')).click();
+        } 
+		
+       //////////CHECK IF XML FILE EXISTS/////////
+       //LIVE
+       String filePath1 = ("X:\\export\\BARC"+localDatos+".XML") 
+
+	   //UAT
+	   /* String filePath1 = ("//22.72.43.227/files/export/BARC"+localDatos+".XML")  */
+		
+		File f1 = new File(filePath1);
+		log.info("filePath1: "+filePath1)
+	if(f1.exists()){
+		try{
+        	w.write("BARC"+localDatos+".XML was generated on "+localDatos1+" at "+timos);
+			w.newLine();
+			}
+			catch(Exception e){
+			log.info("File does not exist!")
+			}
+       	}       
+            
+       ////////BOM JAVA APPLET/////////// 
+
+	
+			openIE(mcib_bom_url);
+		switchToExistingWindow(new WindowDescriptor("", "(?i).*\\QInternet Explorer\\E.*", false, true).toString(), 5000); //wait for 5s
+		
+		/* sendKeys('#r');
+		sendKeys('iexplore');
+		pressEnter();
+		switchToExistingWindow(new WindowDescriptor("", "(?i).*\\QInternet Explorer\\E.*", false, true).toString(), 5000); //wait for 5s
+		sendKeys('{F4}');
+		sendKeys('http://10.103.2.128:7778/forms/frmservlet?config=bom');
+		pressEnter(); */
+		
+			boolean java_form_presence_bool = false;
+			//presence of java applet
+			while(java_form_presence_bool == false){
+	
+				try{
+					switchToExistingWindow(new WindowDescriptor("", "(?i).*\\QOracle Developer\\E.*", false, true).toString(), 5000); //wait for 5s
+					sendKeys("#{UP}");
+					$(byImage("${imagePath}/form1.png")).getCoordinates();
+					java_form_presence_bool = true;
+				}catch(Exception e){
+					java_form_presence_bool = false;
+					log.info("Dialog Found!");
+				}
+				//java update dialog
+				//${imagePath}/run_this_time.png -->put all in same path
+				sleep(2000);
+				boolean java_update_check_bool = false;
+				try{
+					$(byImage("${imagePath}/run_this_time.png")).getCoordinates();
+					java_update_check_bool = true;				
+				}catch(Exception e){
+					java_update_check_bool = false;
+				}
+				if(java_update_check_bool == true){
+					$(byImage("${imagePath}/run_this_time.png")).click();
+					log.info("Java Update passed");			
+				}
+				
+					//java security dialog 0
+				boolean java_security_check_bool_0 = false;
+				try{
+					$(byImage("${imagePath}/run2.png")).getCoordinates();
+					java_security_check_bool_0 = true;
+				}catch(Exception e){
+					java_security_check_bool_0 = false;			
+				}
+				
+				if(java_security_check_bool_0 == true){	
+					$(byImage("${imagePath}/run.png")).click();
+					log.info("Java Security 1(Run) passed");	
+				}
+
+				
+				
+				//java security dialog 1
+				boolean java_update_check_bool_1 = false;
+				try{
+					$(byImage("${imagePath}/run2.png")).getCoordinates();
+					java_update_check_bool_1 = true;				
+				}catch(Exception e){
+					java_update_check_bool_1 = false;
+				}
+				if(java_update_check_bool_1 == true){
+					$(byImage("${imagePath}/run2.png")).click();
+					log.info("Java Security 2(Run) passed");			
+				}
+
+				
+				//java security dialog 2
+				boolean java_security_check_bool_2 = false;
+				try{
+					$(byImage("${imagePath}/run_checkbox.png")).getCoordinates();
+					$(byImage("${imagePath}/run.png")).getCoordinates();
+					java_security_check_bool_2 = true;
+				}catch(Exception e){
+					java_security_check_bool_2 = false;			
+				}
+				
+				if(java_security_check_bool_2 == true){
+					$(byImage("${imagePath}/run_checkbox.png")).click();	
+					$(byImage("${imagePath}/run.png")).click();
+					log.info("Java Security 3(Run) passed");	
+				}
+				
+		
+				//java security dialog 3
+				boolean java_security_check_bool_3 = false;
+				try{
+					$(byImage("${imagePath}/continue.png")).getCoordinates();
+					java_security_check_bool_3 = true;
+				}catch(Exception e){
+					java_security_check_bool_3 = false;
+				}
+				if(java_security_check_bool_3 == true){
+						$(byImage("${imagePath}/continue.png")).click();
+						log.info("Java Security 4(Continue) passed");	
+				}
+				
+				
+				//java security dialog 4
+				boolean java_security_check_bool_4 = false;
+				try{
+					$(byImage("${imagePath}/unblock.png")).getCoordinates();
+					java_security_check_bool_4 = true;
+				}catch(Exception xamal){
+					java_security_check_bool_4  = false;
+				}
+				
+				if(java_security_check_bool_4 == true){	
+					$(byImage("${imagePath}/unblock.png")).click();
+					log.info("Java Security 5(Unblock) passed");		
+				}
+				
+				//java security dialog 5
+				boolean java_update_check_bool_5 = false;
+				try{
+					$(byImage("${imagePath}/java_yes.png")).getCoordinates();
+					java_update_check_bool_5 = true;				
+				}catch(Exception e){
+					java_update_check_bool_5 = false;
+				}
+				if(java_update_check_bool_5 == true){
+					$(byImage("${imagePath}/java_yes.png")).click();
+					log.info("Java Security 6(Yes) passed");			
+				} 
+		
+				//error dialog
+				boolean error_dialog_bool = false;
+				try{
+					$(byImage("${imagePath}/ok.png")).getCoordinates();
+					error_dialog_bool = true;
+				}catch(Exception e){
+					error_dialog_bool = false;
+				}
+				if(error_dialog_bool == true){
+					$(byImage("${imagePath}/ok.png")).click();
+					log.info("Error Dialog passed");
+				}
+			
+			}
+			
+		sleep(2000);
+		
+		
+		////////////////////////////////////LOGIN MCIB//////////////////////////////////
+		switchToExistingWindow(new WindowDescriptor("", "(?i).*\\QOracle Developer\\E.*", false, true).toString(), 5000); //wait for 5s
+		sendKeys(user);
+		sendKeys("{TAB}");
+		sendKeys(pass);
+		sendKeys("{TAB}");
+		sendKeys(group);
+		sendKeys("{TAB}");
+		pressEnter();	
+        
+        //////////////////////////////////////UPLOAD//////////////////////////////////////////
+        sleep(2500)
+        sendKeys("{ALT}");
+        sendKeys("t");
+        sendKeys("u");
+        
+        sleep(2500)
+		
+		if(f1.exists()){
+			sendKeys("{TAB 2}");
+			boolean upload_found = false;
+			while(upload_found == false){
+				try{
+				$(byImage("${imagePath}/upload1.png")).click();
+				upload_found = true;
+				}catch(Exception e){
+					upload_found = false;
+				}
+			}
+			
+			sleep(2000)
+			switchToExistingWindow(new WindowDescriptor("", "(?i).*\\QOpen\\E.*", false, true).toString(), 5000); //wait for 5s
+			sendKeys(filePath1)
+			sleep(5000);
+			pressEnter();
+			sleep(5000);
+			switchToExistingWindow(new WindowDescriptor("", "(?i).*\\QOracle Developer\\E.*", false, true).toString(), 5000); //wait for 5s
+			$(byImage("${imagePath}/uploadFile.png")).click(); //click on upload file
+			sleep(12000);
+				try{
+					$(byImage("${imagePath}/upload_successful.png")).getCoordinates();
+					log.info("upload successful!")
+					pressEnter();
+					w.write("BARC"+localDatos+".XML [UPLOAD SUCCESSFUL] on "+localDatos1+" at "+timos);
+					w.newLine();
+					}
+				catch(Exception e){
+					log.info("upload NOT successful!")
+					pressEnter();
+					w.write("BARC"+localDatos+".XML [UPLOAD FAILED] on "+localDatos1+" at "+timos);
+					w.newLine();
+					log.info("File not found!")
+					}	
+			}
+        ///////////Exit/////////
+        sleep(1500)
+        sendKeys("{ALT}");
+        sendKeys("e");
+        sleep(1500)
+        sendKeys("{ALT}");
+        sendKeys("l")
+        $(byImage("${imagePath}/logout.png")).click();
+        sleep(1500)
+        pressEnter();
+		
+		w.close();
+]]></script>
+
+</robot>
+</robotics-flow>
+
+    <export include-original-data="true">
+
+  	</export>
+
+</config>
