@@ -1,0 +1,243 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config
+	xmlns="http://web-harvest.sourceforge.net/schema/1.0/config"
+	scriptlang="groovy">
+	
+	<!-- <include-config	code="bot_nop_config" /> -->
+<var-def name="properties_nop">
+		<datastore name="ds_nop_config">
+			<template>select * from @this</template>
+		</datastore>
+	</var-def>	
+	
+	<script><![CDATA[
+		def NOP_CONFIGS = [:]
+		properties_nop.getWrappedObject().toList().each { property ->
+			NOP_CONFIGS.put(property.get("property_name").toString(), property.get("property_value").toString())
+		}
+		sys.defineVariable("NOP_CONFIGS", NOP_CONFIGS)
+				
+	]]></script>
+	
+	<robotics-flow>
+		<robot driver="universal" close-on-completion="true">
+	
+	<script><![CDATA[ 
+ 
+          import java.time.LocalDate;
+          import java.time.DayOfWeek;
+          import java.time.format.DateTimeFormatter;
+          import java.time.temporal.ChronoField;
+          import java.time.temporal.ChronoUnit;
+          import java.io.File;
+          import java.io.FileInputStream;
+          import java.io.FileNotFoundException;
+          import java.io.FileOutputStream;
+          import java.io.IOException;
+          import java.io.InputStream;
+          import java.io.OutputStream;
+          import java.nio.channels.FileChannel;
+          import java.io.FileReader;
+          import org.apache.commons.lang.math.NumberUtils;
+          //import org.apache.log4j.Logger;
+          import org.apache.poi.ss.usermodel.Row;
+          import org.apache.poi.ss.usermodel.Workbook;
+          import org.apache.poi.xssf.streaming.SXSSFSheet;
+          import org.apache.poi.xssf.streaming.SXSSFWorkbook;
+          import java.time.OffsetDateTime;
+          import java.time.ZoneOffset;
+          import com.workfusion.studio.rpa.recorder.api.*
+          import com.workfusion.studio.rpa.recorder.api.types.*
+          import com.workfusion.studio.rpa.recorder.api.custom.*
+          import com.workfusion.studio.rpa.recorder.api.internal.representation.*
+          import com.workfusion.bot.exception.*
+
+		
+			String previous_day = previous_working_day
+
+			DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+			LocalDate previous_working_day = LocalDate.parse(previous_day.toString(), formatter);
+
+			String local_date  = DateTimeFormatter.ofPattern("dd-MMM-yyyy").format(previous_working_day);
+			String[] b = local_date.split("-");
+
+			final_day = b[0]
+			final_month = b[1]
+			final_year = b[2]
+
+			System.out.println("final_day==="+final_day);
+			System.out.println("final_month==="+final_month);
+			System.out.println("final_year==="+final_year);
+
+			sys.defineVariable("final_day", final_day)
+			sys.defineVariable("final_month", final_month)
+			sys.defineVariable("final_year", final_year)
+			String local_date_yymmdd  = DateTimeFormatter.ofPattern("yyMMdd").format(previous_working_day);
+			String local_date_ddmmyy  = DateTimeFormatter.ofPattern("ddMMyy").format(previous_working_day);
+			String local_date_yyyymmdd  = DateTimeFormatter.ofPattern("yyyyMMdd").format(previous_working_day);
+			
+			// for date matching in files 21/10/2019
+			String file_date_ddmmyyyy  = DateTimeFormatter.ofPattern("dd/MM/yyyy").format(previous_working_day);
+			sys.defineVariable("file_date_ddmmyyyy", file_date_ddmmyyyy)
+			
+			String month_num = local_date_yymmdd.subSequence(2, 4);
+			log.debug("month_num ==="+month_num)
+			log.debug("local_date_yymmdd ==="+local_date_yymmdd)
+			sys.defineVariable("local_date_yymmdd", local_date_yymmdd)
+			sys.defineVariable("local_date_ddmmyy", local_date_ddmmyy)
+			sys.defineVariable("local_date_yyyymmdd", local_date_yyyymmdd)
+			sys.defineVariable("month_num", month_num)
+
+
+			LocalDate today = LocalDate.now();
+			String today_ddmmyyyy = DateTimeFormatter.ofPattern("ddMMyyyy").format(today);
+			String local_date_dd_MM_yyyy  = DateTimeFormatter.ofPattern("dd.MM.yyyy").format(previous_working_day);
+			String local_date_ddMMyyyy  = DateTimeFormatter.ofPattern("ddMMyyyy").format(previous_working_day);
+			String local_date_ddMMyy  = DateTimeFormatter.ofPattern("ddMMyy").format(previous_working_day);
+			
+		inDesktop(){
+		
+			String converter = (NOP_CONFIGS.getWrappedObject().get("NOP_PART2_QuickFix").toString());
+			
+			sendKeys('#r')
+			sendKeys(converter);
+			sleep(2000);
+			pressEnter();
+			
+			sleep(10000);
+			//window('[TITLE:NOP PART LOGIC.xlsm - Excel]');
+			sendKeys('{F5}')
+			sendKeys('^g')
+			sleep(1000);
+			sendKeys("F6");
+			pressEnter();
+			sleep(1000)
+			String RecCheck_Onshore_file = (NOP_CONFIGS.getWrappedObject().get("Market_NOP_Reconciliation_Onshore").toString()+"${final_year}//Robot_Data//${month_num} ${final_month}//${local_date_ddmmyy}//RecCheck_Onshore_"+today_ddmmyyyy+".xlsx").replace("//", "\\");
+			//String RecCheck_Onshore_file = ("C://Users//Akshay//Downloads//260121 BIR problem//260721 BIR problem//RecCheck_Onshore_27012021.xlsx").replace("//", "\\");
+			log.info("RecCheck_Onshore_file: "+RecCheck_Onshore_file);
+			setClipboardText(RecCheck_Onshore_file); 
+			sendKeys(RecCheck_Onshore_file);
+			pressEnter();
+			
+			sendKeys('{F5}')
+			sendKeys('^g')
+			sleep(1000);
+			sendKeys("F7");
+			pressEnter();
+			sleep(1000)
+			String Integrator_BIR_Sheet_Booking = NOP_CONFIGS.getWrappedObject().get("Market_NOP_Reconciliation_Onshore").toString()+"${final_year}//Robot_Data//${month_num} ${final_month}//${local_date_ddMMyy}//Integrator_BIR_Sheet_Booking_"+local_date_ddMMyyyy+".xlsx";
+			//String Integrator_BIR_Sheet_Booking = ("C://Users//Akshay//Downloads//260121 BIR problem//260721 BIR problem//Integrator_BIR_Sheet_Booking_26012021.xlsx").replace("//", "\\");
+			log.info("Integrator_BIR_Sheet_Booking: "+Integrator_BIR_Sheet_Booking);
+			setClipboardText(Integrator_BIR_Sheet_Booking); 
+			sendKeys(Integrator_BIR_Sheet_Booking);
+			pressEnter();					
+			
+			sendKeys('{F5}')
+			sendKeys('^g')
+			sleep(1000);
+			sendKeys("F8");
+			pressEnter();
+			sleep(1000)
+			String on_sheet = NOP_CONFIGS.getWrappedObject().get("Market_NOP_Reconciliation_Onshore").toString()+"${final_year}//Robot_Data//${month_num} ${final_month}//${local_date_ddMMyy}//ON ${local_date_dd_MM_yyyy}.xlsx";
+			//String on_sheet = ("C://Users//Akshay//Downloads//260121 BIR problem//260721 BIR problem//ON 26.01.2021.xlsx").replace("//", "\\");
+			log.info("on_sheet: "+on_sheet);
+			setClipboardText(on_sheet); 
+			sendKeys(on_sheet);
+			pressEnter();
+			
+			sleep(1500);
+			sendKeys("^s");
+			sleep(1000);
+			
+			def bir_file = new File(Integrator_BIR_Sheet_Booking);
+			def on_file = new File(on_sheet);
+			
+			boolean completed = false;
+			
+			sendKeys("^w"); //macro interest
+			
+			//sleep(10000);
+			while(completed == false){
+				try{
+					window('[TITLE:Microsoft Excel]');
+					pressEnter();
+					window('[TITLE:NOP PART LOGIC.xlsm - Excel]');
+					completed = true;
+					}catch(Exception e){
+						completed = false;
+					}
+			}
+
+			if(bir_file.exists()){
+				log.info("BIR file is present.");
+				sendKeys("^q"); //macro BIR
+				//sleep(120000);
+					completed = false;
+					while(completed == false){
+					try{
+						window('[TITLE:Microsoft Excel]');
+						pressEnter();
+						window('[TITLE:NOP PART LOGIC.xlsm - Excel]');
+						completed = true;
+						}catch(Exception e){
+							completed = false;
+						}
+					}
+				
+				//sendKeys("^z"); //call macro cleaning2
+				//sleep(30000);
+			}else{
+				log.info("BIR file is NOT present.");
+			}
+			
+			if(on_file.exists()){
+				log.info("ON file is present.");
+				sendKeys("^m"); //macro ON part 1
+				//sleep(40000);
+					completed = false;
+					while(completed == false){
+					try{
+						window('[TITLE:Microsoft Excel]');
+						pressEnter();
+						window('[TITLE:NOP PART LOGIC.xlsm - Excel]');
+						completed = true;
+						}catch(Exception e){
+							completed = false;
+						}
+					}
+					
+				sendKeys("^e"); //macro ON part 2
+				//sleep(40000);
+					completed = false;
+					while(completed == false){
+					try{
+						window('[TITLE:Microsoft Excel]');
+						pressEnter();
+						window('[TITLE:NOP PART LOGIC.xlsm - Excel]');
+						completed = true;
+						}catch(Exception e){
+							completed = false;
+						}
+					}
+				
+				//sendKeys("^y"); //call macro cleaning
+				//sleep(30000);
+			}else{
+				log.info("ON file is NOT present.");
+			}
+						
+			sendKeys('!{F4}')
+			//close();
+			}
+			
+			log.info("Logics Quick Fix completed."); 
+			
+	]]></script>
+	
+		</robot> 
+		</robotics-flow> 
+	<export include-original-data="true">
+	
+	</export>
+
+</config>
